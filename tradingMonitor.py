@@ -123,4 +123,5 @@ if __name__ == '__main__':
             print('tradingMonitor at work, now is: ' + str(datetime.now().time()))
         # weeken
         else:
-            pass
+            print('Weekend. Have some fun!')
+            sleep(60)
