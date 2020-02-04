@@ -19,7 +19,7 @@ if __name__ == '__main__':
     futureGivenList = ['MA005', 'rb2005']
     
     ashare50Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare5.0', 'realtrading', 'trading_ashares')
-    ashare50List = ['000333', '601318', '600036', '600309']
+    ashare50List = ['000333', '002008', '601318', '600009', '600309']
     
     ashare40Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare4.0', 'realtrading', 'trading_ashares')
     ashare40List = ['000333', '000858', '002008', '000661', '600036', 
