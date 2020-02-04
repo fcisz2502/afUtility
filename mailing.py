@@ -6,13 +6,13 @@ from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from keyInfo import cwhEmail, zzhEmail, zmEmail, senderEmail, senderEmailPassword 
-
+from keyInfo import subjectPrefix
 
 
 # -----------------------------------------------------------------------------
 class Email(object):
     def __init__(self):
-        self.subjectPrefix = 'FCI'
+        self.subjectPrefix = subjectPrefix
         self.instrument = str() 
         self.receivers = [cwhEmail, zzhEmail]
     
@@ -73,7 +73,7 @@ class Email(object):
 
 if __name__ == '__main__':
     email = Email()
-    email.set_subjectPrefix('testing')
+#    email.set_subjectPrefix('testing')
 #    email.receivers = [cwhEmail]
     order={'order1': {'openPrice': 10, 'closePrice': 1, 'pnl': 9}}
     email.send('Horward', str(order), mailBox=[cwhEmail])
