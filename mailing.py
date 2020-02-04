@@ -12,7 +12,7 @@ from keyInfo import cwhEmail, zzhEmail, zmEmail, senderEmail, senderEmailPasswor
 # -----------------------------------------------------------------------------
 class Email(object):
     def __init__(self):
-        self.subjectPrefix = str()
+        self.subjectPrefix = 'FCI'
         self.instrument = str() 
         self.receivers = [cwhEmail, zzhEmail]
     

@@ -94,14 +94,14 @@ if __name__ == '__main__':
             if time(15, 8) > datetime.now().time() > time(15, 7):
                 try:
                     future_portfolio_pnl()
-                except Exception as e:
+                except Exception, e:
                     print('getting future portfolio pnl failed, error: ', repr(e))
 
             # ----------------------------------------------------------------------------------------------------------
             if time(15, 11) > datetime.now().time() > time(15, 10):
                 try:
                     stock_portfolio_pnl()
-                except Exception as e:
+                except Exception, e:
                     print('getting stock portfolio pnl failed, error: ', repr(e))
 
             # ----------------------------------------------------------------------------------------------------------
