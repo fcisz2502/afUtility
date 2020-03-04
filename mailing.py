@@ -6,22 +6,19 @@ from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 from keyInfo import cwhEmail, zzhEmail, zmEmail, senderEmail, senderEmailPassword 
-from keyInfo import subjectPrefix
+from keyInfo import machineID
 
 
 # -----------------------------------------------------------------------------
 class Email(object):
     def __init__(self):
-        self.subjectPrefix = subjectPrefix
-        self.instrument = str() 
+        self.machineID = machineID
+        self.subjectPrefix = 'prefix'
         self.receivers = [cwhEmail, zzhEmail]
     
     # -------------------------------------------------------------------------    
     def set_subjectPrefix(self, x):
         self.subjectPrefix = x
-
-    def set_instrument(self, x):
-        self.instrument = x
 
     def set_receivers(self, x):
         self.receivers = x
@@ -40,7 +37,7 @@ class Email(object):
         message['From'] = Header("FCI", 'utf-8')
         message['To'] = Header("fcier", 'utf-8')
 
-        subject = self.subjectPrefix + ' ' + self.instrument + ' ' + subject
+        subject = self.machineID + "-" + self.subjectPrefix + ' ' + subject
         message['Subject'] = Header(subject, 'utf-8')
 
         msgAlter = MIMEMultipart('alternative')

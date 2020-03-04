@@ -1,6 +1,7 @@
 import os
 from afUtility.mailing import Email
 from keyInfo import cwhEmail
+from copy import deepcopy
 
 
 # -----------------------------------------------------------------------------
@@ -23,17 +24,17 @@ class TradingInstrumentMonitor(object):
     def compareGivenInstrumentToTradingInstrument(self, givenInstrumentList, tradingInstrumentList):
         print('tradingInstrumentList is: ', tradingInstrumentList)
         print('givenInstrumentList is: ', givenInstrumentList)
-        
+        gim = deepcopy(givenInstrumentList)
         if len(tradingInstrumentList) > 0:
             try:
                 for item in tradingInstrumentList:
                     if item != str():
-                        givenInstrumentList.remove(item)
+                        gim.remove(item)
             except ValueError, e:
                 self.email.send('ValueError in tradingInstrumentList, check it!', repr(e))
                 print('ValueError in tradingInstrumentList: ', e)
 
-        return givenInstrumentList
+        return gim
     
     # -------------------------------------------------------------------------     
     def checkTradingBeginning(self, emailSubjectPrefix, assetPath, givenInstrumentList):

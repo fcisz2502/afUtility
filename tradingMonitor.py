@@ -19,7 +19,7 @@ if __name__ == '__main__':
     futureGivenList = ['MA005', 'rb2005']
     
     ashare50Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare5.0', 'realtrading', 'trading_ashares')
-    ashare50List = ['000333', '002008', '601318', '600009', '600309']
+    ashare50List = ['000333', '002008', '601318', '600009', '600309', '600276']
     
     ashare40Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare4.0', 'realtrading', 'trading_ashares')
     ashare40List = ['000333', '000858', '002008', '000661', '600036', 
@@ -113,10 +113,10 @@ if __name__ == '__main__':
 
             # ----------------------------------------------------------------------------------------------------------
             # trade station
-            # if (ime(15, 11) > datetime.now().time()) > time(15, 10) or (time(9, 23) > datetime.now().time() > time(9, 22)):
-            #     order_id = open("C:\\autotrade\\order_number.txt", "w")
-            #     order_id.write("1")
-            #     order_id.close()
+            if (time(15, 11) > datetime.now().time() > time(15, 10)) or (time(9, 23) > datetime.now().time() > time(9, 22)):
+                order_id = open("C:\\autotrade\\order_number.txt", "w")
+                order_id.write("1")
+                order_id.close()
 
             # ----------------------------------------------------------------------------------------------------------
             sleep(60)
