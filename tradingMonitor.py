@@ -19,7 +19,7 @@ if __name__ == '__main__':
     futureGivenList = ['MA005', 'rb2005']
     
     ashare50Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare5.0', 'realtrading', 'trading_ashares')
-    ashare50List = ['000333', '002008', '601318', '600009', '600309', '600276']
+    ashare50List = ['000333', '002008', '601318', '600009', '600309']
     
     ashare40Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare4.0', 'realtrading', 'trading_ashares')
     ashare40List = ['000333', '000858', '002008', '000661', '600036', 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
                     time(20, 43) > datetime.now().time() > time(20, 42):
                 try:
                     thread = threading.Thread(target=tim.checkTradingBeginning,
-                                              args=('LN1-vnpy-Probot-pt', 
+                                              args=('Probot-pt',
                                                     futurePath, 
                                                     futureGivenList)
                                               ).start()
@@ -49,7 +49,7 @@ if __name__ == '__main__':
                     time(23, 37) > datetime.now().time() > time(23, 36):
                 try:
                     thread = threading.Thread(target=tim.checkTradingEnding,
-                                              args=('LN1-vnpy-Probot-pt', 
+                                              args=('Probot-pt',
                                                     futurePath, 
                                                     futureGivenList)
                                               ).start()
@@ -61,12 +61,12 @@ if __name__ == '__main__':
             if time(9, 23) > datetime.now().time() > time(9, 22):
                 try:
                     thread = threading.Thread(target=tim.checkTradingBeginning,
-                                              args=('LN1-applepy-4.0-pt', 
+                                              args=('applepy-4.0-pt',
                                                     ashare40Path, 
                                                     ashare40List)
                                               ).start()
                     thread = threading.Thread(target=tim.checkTradingBeginning,
-                                              args=('LN1-applepy-5.0-pt', 
+                                              args=('applepy-5.0-pt',
                                                     ashare50Path, 
                                                     ashare50List)
                                               ).start()
@@ -78,12 +78,12 @@ if __name__ == '__main__':
             if time(15, 7) > datetime.now().time() > time(15, 6):
                 try:
                     thread = threading.Thread(target=tim.checkTradingEnding,
-                                              args=('LN1-applepy-4.0-pt', 
+                                              args=('applepy-4.0-pt',
                                                     ashare40Path, 
                                                     ashare40List)
                                               ).start()
                     thread = threading.Thread(target=tim.checkTradingEnding,
-                                              args=('LN1-applepy-5.0-pt', 
+                                              args=('applepy-5.0-pt',
                                                     ashare50Path, 
                                                     ashare50List)
                                               ).start()
@@ -119,8 +119,8 @@ if __name__ == '__main__':
                 order_id.close()
 
             # ----------------------------------------------------------------------------------------------------------
-            sleep(60)
             print('tradingMonitor at work, now is: ' + str(datetime.now().time()))
+            sleep(60)
         # weeken
         else:
             print('Weekend. Have some fun!')

@@ -64,4 +64,4 @@ if __name__ == '__main__':
     tim = TradingInstrumentMonitor()
     tim.email.set_receivers ( [cwhEmail])
     path = os.path.join('c:', os.sep, 'vnpy-1.9.2', 'examples', 'CtaTrading', 'pt_trading_futures')
-    tim.checkTradingEnding('LN1-vnpy-Probot-pt', path, ['rb2005', 'MA005'])
+    tim.checkTradingEnding('Probot-pt', path, ['rb2005', 'MA005'])
