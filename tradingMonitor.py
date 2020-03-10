@@ -24,7 +24,8 @@ if __name__ == '__main__':
     ashare40Path = os.path.join('C:', os.sep,  'applepy', 'projects', 'ashare', 'ashare4.0', 'realtrading', 'trading_ashares')
     ashare40List = ['000333', '000858', '002008', '000661', '600036', 
                     '600309', '601318', '600009', '600276', '603288']
-    
+    ashare40TradingBarsFolder = "C:\\applepy\\projects\\ashare\\docs\\4.0_realTradingData\\"
+
     tim = TradingInstrumentMonitor()
     
     while True:
@@ -107,7 +108,12 @@ if __name__ == '__main__':
             # ----------------------------------------------------------------------------------------------------------
             if time(15, 14) > datetime.now().time() > time(15, 13) or time(11, 40) > datetime.now().time() > time(11, 39):
                 try:
-                    thread = threading.Thread(target=compare_stock_data, args=(ashare40List, 0.002)).start()
+                    thread = threading.Thread(target=compare_stock_data,
+                                              args=(ashare40List,
+                                                    ashare40TradingBarsFolder,
+                                                    'applepy-4.0-pt',
+                                                    0.002)
+                                              ).start()
                 except Exception, e:
                     print('compare stock data has failed: ', repr(e))
 

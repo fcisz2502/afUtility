@@ -27,9 +27,9 @@ def get_60m_data_from_web(instrument):
     return data
 
 # -----------------------------------------------------------------------------
-def compare_stock_data(instruments, error_tick=0):
+def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
     email = Email()
-    email.set_subjectPrefix('LN1-applepy4.0-pt')
+    email.set_subjectPrefix(prefix)
     error_data = pd.DataFrame()
     for instrument in instruments:
         web_data = get_60m_data_from_web(instrument)
@@ -38,7 +38,7 @@ def compare_stock_data(instruments, error_tick=0):
         if len(web_data) == 0:
             email.send('get ' + instrument + 'web data error! Can not do compare!', str())
         else:
-            path = "C:\\applepy\\projects\\ashare\\docs\\4.0_realTradingData\\" + instrument + "\\" + instrument + "_trading_bars.csv"
+            path = tradingBarsPath + instrument + "\\" + instrument + "_trading_bars.csv"
             local_data = pd.read_csv(path)
             local_data = local_data[pd.to_datetime(local_data['datetime']) > datetime.today().date()]
             local_data.reset_index(drop=True, inplace=True)
@@ -67,6 +67,7 @@ def compare_stock_data(instruments, error_tick=0):
                     error_data = pd.concat([error_data, stock_error])
     if len(error_data) != 0:
         email.send("stock_data_error, web-local", error_data.to_html(index=0, justify='left'))
+
 
 if __name__ == '__main__':
     instruments = ['000333', '002008', '000858', '601318', '600036', '600309', '600276', '000661', '603288', '600009']
