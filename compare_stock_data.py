@@ -70,5 +70,7 @@ def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
 
 
 if __name__ == '__main__':
-    instruments = ['000333', '002008', '000858', '601318', '600036', '600309', '600276', '000661', '603288', '600009']
-    compare_stock_data(instruments, 0.0005)
+    instruments = ['600009', '002008', '601318', '600309', '000333']
+    ashare50TradingBarsFolder = "C:\\applepy\\projects\\ashare\\docs\\5.0_realTradingData\\"
+    prefix = 'applepy-5.0'
+    compare_stock_data(instruments, prefix, ashare50TradingBarsFolder, 0.0005)
