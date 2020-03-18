@@ -24,7 +24,7 @@ class Email(object):
         self.receivers = x
         
     # -------------------------------------------------------------------------
-    def send(self, subject, content, png=None, mailBox=None):
+    def send(self, subject, content, png=None, files=None, mailBox=None):
         # 第三方 SMTP 服务
         mail_host = "smtp.exmail.qq.com"  # 设置服务器
         mail_user = senderEmail  # 用户名
@@ -55,6 +55,16 @@ class Email(object):
                 msgImage.add_header('Content-ID', '<image' + str(i) + '>')
                 message.attach(msgImage)
 
+        if files:
+            for i in range(len(files)):
+                file = files[i]
+                filename = file.split("\\")[-1]
+                att1 = MIMEText(open(file, 'rb').read(), 'base64', 'utf-8')
+                att1["Content-Type"] = 'application/octet-stream'
+                # 这里的filename可以任意写，写什么名字，邮件中显示什么名字
+                att1["Content-Disposition"] = 'attachment; filename="' + filename + '"'
+                message.attach(att1)
+        
         try:
             smtpObj = smtplib.SMTP()
             smtpObj.connect(mail_host, 25)  # 25 为 SMTP 端口号
@@ -71,7 +81,8 @@ class Email(object):
 if __name__ == '__main__':
     email = Email()
 #    email.set_subjectPrefix('testing')
-#    email.receivers = [cwhEmail]
-    order={'order1': {'openPrice': 10, 'closePrice': 1, 'pnl': 9}}
-    email.send('Horward', str(order), mailBox=[cwhEmail])
+    email.receivers = [cwhEmail]
+    email.send('testing', str(), files=["C:\\applepy\\test.csv"])
+#    order={'order1': {'openPrice': 10, 'closePrice': 1, 'pnl': 9}}
+#    email.send('Horward', str(order), mailBox=[cwhEmail])
     
