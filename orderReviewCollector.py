@@ -2,7 +2,7 @@ import os
 from datetime import datetime, time
 import pandas as pd
 from afUtility.mailing import Email
-from afUtility.keyInfo import zmEmail,cwhEmail
+from afUtility.keyInfo import zmEmail, cwhEmail
 import copy
 
 
@@ -12,7 +12,8 @@ def getAllOrderReview():
     ordersMonitor will check history orders,
     compare today's orders in real trading with thoes in backtesting. 
     '''
-    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
+#    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
+    reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", "spike stocks", "orderReview")
     checkList = ["VM2_spike2", "VM2_spikeOLOS", "VM4_spike2", "VM5_spike2"]
     today = str(datetime.today().date())
     
@@ -39,7 +40,7 @@ def getAllOrderReview():
     
     # get orderReviewTotalResult from loacl machine
 #    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
-#    doc = "2020-03-19_161759_allSpikeOrderReview.csv"
+#    doc = "2020-03-23_170616_allSpikeOrderReview.csv"
 #    doc = os.path.join(reviewResultFolder, doc)
 #    orderReviewTotalResult = pd.read_csv(doc)
     
