@@ -3,27 +3,30 @@ import pandas as pd
 from datetime import datetime
 from dateutil.parser import parse
 from mailing import Email
+import os
 
 
 # -----------------------------------------------------------------------------
 def get_60m_data_from_web(instrument):
-    if instrument[0:1] == '6':
-        mark = 'sh'
-    else:
-        mark = 'sz'
-    page = requests.get('http://ifzq.gtimg.cn/appstock/app/kline/mkline?param=' + mark + instrument + ',m60,,320&_var=m60_today')
-    page_info = page.text
-    minute_data = page_info.split("m60")[2].split("[")[2:]
-    data = pd.DataFrame()
-    data['mesage'] = minute_data
-    data['datetime'] = data['mesage'].apply(lambda x: x.split(",")[0][1:-1])
-    data['datetime'] = data['datetime'].apply(lambda x: parse(x))
-    data['open'] = data['mesage'].apply(lambda x: float(x.split(",")[1][1:6]))
-    data['close'] = data['mesage'].apply(lambda x: float(x.split(",")[2][1:6]))
-    data['high'] = data['mesage'].apply(lambda x: float(x.split(",")[3][1:6]))
-    data['low'] = data['mesage'].apply(lambda x: float(x.split(",")[4][1:6]))
-    data = data[['datetime', 'open', 'high', 'low', 'close']]
-    data.reset_index(drop=True, inplace=True)
+#    if instrument[0:1] == '6':
+#        mark = 'sh'
+#    else:
+#        mark = 'sz'
+#    page = requests.get('http://ifzq.gtimg.cn/appstock/app/kline/mkline?param=' + mark + instrument + ',m60,,320&_var=m60_today')
+#    page_info = page.text
+#    minute_data = page_info.split("m60")[2].split("[")[2:]
+#    data = pd.DataFrame()
+#    data['mesage'] = minute_data
+#    data['datetime'] = data['mesage'].apply(lambda x: x.split(",")[0][1:-1])
+#    data['datetime'] = data['datetime'].apply(lambda x: parse(x))
+#    data['open'] = data['mesage'].apply(lambda x: float(x.split(",")[1][1:6]))
+#    data['close'] = data['mesage'].apply(lambda x: float(x.split(",")[2][1:6]))
+#    data['high'] = data['mesage'].apply(lambda x: float(x.split(",")[3][1:6]))
+#    data['low'] = data['mesage'].apply(lambda x: float(x.split(",")[4][1:6]))
+#    data = data[['datetime', 'open', 'high', 'low', 'close']]
+#    data.reset_index(drop=True, inplace=True)
+#    return data
+    data = pd.read_csv("\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\olos compare stocks\\" + instrument + '.csv')
     return data
 
 # -----------------------------------------------------------------------------
@@ -33,12 +36,13 @@ def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
     error_data = pd.DataFrame()
     for instrument in instruments:
         web_data = get_60m_data_from_web(instrument)
+        web_data['datetime']= pd.to_datetime(web_data['datetime'])
         web_data = web_data[web_data['datetime'] > datetime.today().date()]
         web_data.reset_index(drop=True, inplace=True)        
         if len(web_data) == 0:
             email.send('get ' + instrument + 'web data error! Can not do compare!', str())
         else:
-            path = tradingBarsPath + instrument + "\\" + instrument + "_trading_bars.csv"
+            path = os.path.join(tradingBarsPath, instrument, instrument + "_trading_bars.csv")
             local_data = pd.read_csv(path)
             local_data = local_data[pd.to_datetime(local_data['datetime']) > datetime.today().date()]
             local_data.reset_index(drop=True, inplace=True)
@@ -70,7 +74,7 @@ def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
 
 
 if __name__ == '__main__':
-    instruments = ['600009', '002008', '601318', '600309', '000333']
-    ashare50TradingBarsFolder = "C:\\applepy\\projects\\ashare\\docs\\5.0_realTradingData\\"
+    instruments = ['000661', '002008', '000858', '600276', '000333']
+    ashare50TradingBarsFolder =  "C:\\quant\\spike5.0\\realtrading\\realTradingData"
     prefix = 'applepy-5.0'
     compare_stock_data(instruments, prefix, ashare50TradingBarsFolder, 0.0005)
