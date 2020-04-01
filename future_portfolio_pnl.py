@@ -10,7 +10,7 @@ from keyInfo import cwhEmail, zzhEmail, zmEmail
 # ------------------------------------------------------------------
 def future_portfolio_pnl():
     email = Email()
-    email.set_subjectPrefix('LN1-Probot-pt')
+    email.set_subjectPrefix('probot-pt')
     """从数据库载入策略的持仓情况"""
     myclient = pymongo.MongoClient('mongodb://localhost:27017/')        
     mydb = myclient['VnTrader_Position_Db']   

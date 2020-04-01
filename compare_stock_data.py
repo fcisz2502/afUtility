@@ -35,6 +35,14 @@ def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
     email.set_subjectPrefix(prefix)
     error_data = pd.DataFrame()
     for instrument in instruments:
+        path = os.path.join(tradingBarsPath, instrument, instrument + "_trading_bars.csv")
+        local_trading_data = pd.read_csv(path)
+        add_trading_data = local_trading_data.iloc[-2:]
+        path2 = "C:\\svnT\\applepy2.0\\projects\\ashare\\realtrading_data\\"+instrument + "_trading_bars.csv"
+        his_trading_data = pd.read_csv(path2)
+        new_trading_data = pd.concat([his_trading_data, add_trading_data])
+        new_trading_data.drop_duplicates(inplace=True)        
+        new_trading_data.to_csv(path2, index=0)
         web_data = get_60m_data_from_web(instrument)
         web_data['datetime']= pd.to_datetime(web_data['datetime'])
         web_data = web_data[web_data['datetime'] > datetime.today().date()]
@@ -73,8 +81,11 @@ def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
         email.send("stock_data_error, web-local", error_data.to_html(index=0, justify='left'))
 
 
+# --------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     instruments = ['000661', '002008', '000858', '600276', '000333']
-    ashare50TradingBarsFolder =  "C:\\quant\\spike5.0\\realtrading\\realTradingData"
+    # spike5TradingBarFolder =  "C:\\quant\\spike5.0\\realtrading\\realTradingData"
+    spike5TradingBarFolder = os.path.join("C:", os.sep, "quant", "spike5.0",
+                                          "realtrading", "realTradingData")
     prefix = 'applepy-5.0'
-    compare_stock_data(instruments, prefix, ashare50TradingBarsFolder, 0.0005)
+    compare_stock_data(instruments, prefix, spike5TradingBarFolder, 0.0005)
