@@ -13,10 +13,10 @@ def getAllOrderReview():
     compare today's orders in real trading with thoes in backtesting. 
     '''
     strategyName = "Probot"
+    checkList = ["VM2_probot"]
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", 
                                       "dataProcess", "future_daily_data", 
-                                      "ctaTradingOrderReview")
-    checkList = ["VM2_probot"]
+                                      strategyName[0].lower()+strategyName[1:]+"OrderReview")
     
     checkListCopy = copy.deepcopy(checkList)
     today = str(datetime.today().date())
