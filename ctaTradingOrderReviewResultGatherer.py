@@ -12,26 +12,35 @@ def getAllOrderReview():
     gatherer will check history orders,
     compare today's orders in real trading with thoes in backtesting. 
     '''
+    strategyName = "Probot"
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", 
                                       "dataProcess", "future_daily_data", 
                                       "ctaTradingOrderReview")
     checkList = ["VM2_probot"]
+    
     checkListCopy = copy.deepcopy(checkList)
     today = str(datetime.today().date())
     
     orderReviewTotalResult = pd.DataFrame()
     for doc in os.listdir(reviewResultFolder):
-        if today in doc.split("_") and (not "allSpikeOrderReview.csv" in doc.split("_")):
-            checkList.remove(doc[18:-4])
-            orderReviewTotalResult = pd.concat([orderReviewTotalResult, pd.read_csv(os.path.join(reviewResultFolder, doc))], sort=False)
-#            except TypeError:
-#                orderReviewTotalResult = pd.concat([orderReviewTotalResult, pd.read_csv(os.path.join(reviewResultFolder, doc))])
+        if datetime.now().time() < time(9):
+            if today in doc.split("_") and (int(doc[11:17])<90000) and (not "all"+strategyName+"OrderReview.csv" in doc.split("_")):
+                checkList.remove(doc[18:-4])
+                orderReviewTotalResult = pd.concat([orderReviewTotalResult, pd.read_csv(os.path.join(reviewResultFolder, doc))], sort=False)
+        elif datetime.now().time() < time(15):
+            if today in doc.split("_") and (90000<int(doc[11:17])<150000) and (not "all"+strategyName+"OrderReview.csv" in doc.split("_")):
+                checkList.remove(doc[18:-4])
+                orderReviewTotalResult = pd.concat([orderReviewTotalResult, pd.read_csv(os.path.join(reviewResultFolder, doc))], sort=False)
+        else:
+            if today in doc.split("_") and (int(doc[11:17])>150000) and (not "all"+strategyName+"OrderReview.csv" in doc.split("_")):
+                checkList.remove(doc[18:-4])
+                orderReviewTotalResult = pd.concat([orderReviewTotalResult, pd.read_csv(os.path.join(reviewResultFolder, doc))], sort=False)
     if len(checkList):
         subjectSuffix = "Order review result(s) from %s have not been found!" % checkList
     else:
         subjectSuffix = "Order review for %s have been done!" % checkListCopy
     
-    fileSaveAndAttached = os.path.join(reviewResultFolder, datetime.now().strftime("%Y-%m-%d_%H%M%S")+"_allSpikeOrderReview.csv")
+    fileSaveAndAttached = os.path.join(reviewResultFolder, datetime.now().strftime("%Y-%m-%d_%H%M%S")+"_all"+strategyName+"OrderReview.csv")
     orderReviewTotalResult.to_csv(fileSaveAndAttached, index=0)
     
     orderReviewTotalResult['rt_last_enter_datetime'] = pd.to_datetime(orderReviewTotalResult['rt_last_enter_datetime'])
@@ -100,7 +109,7 @@ def getAllOrderReview():
     email.set_subjectPrefix(str())
     email.receivers = cwhEmail
 #    email.receivers.append(zmEmail)
-    email.send("Review spike's order(s) today: " + subjectSuffix, 
+    email.send("Review "+strategyName+"'s order(s) today: " + subjectSuffix, 
                todayOrderPresented.to_html(justify='left'),
                files = [fileSaveAndAttached])
     
