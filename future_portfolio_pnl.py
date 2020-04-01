@@ -8,7 +8,7 @@ from keyInfo import cwhEmail, zzhEmail, zmEmail
 
 
 # ------------------------------------------------------------------
-def future_portfolio_pnl():
+def future_portfolio_pnl(instrumentList):
     email = Email()
     email.set_subjectPrefix('probot-pt')
     """从数据库载入策略的持仓情况"""
@@ -18,7 +18,6 @@ def future_portfolio_pnl():
     future_pnl = pd.DataFrame(columns = ['id', 'ft', 'current_pnl', 'history_pnl', 'long', 'short'])
     for zhanghao in collectionList:
         collection = mydb[zhanghao]
-        instrumentList = ['rb2005', 'MA005']
         #instrumentList = ['AP910']
         equity = 0
         for instrument in instrumentList:
@@ -125,5 +124,5 @@ def future_portfolio_pnl():
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    future_portfolio_pnl()
+    future_portfolio_pnl(["rb2010", "MA005"])  # ["rb2010", "MA005"]
     
