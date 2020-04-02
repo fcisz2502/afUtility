@@ -65,7 +65,7 @@ def getAllOrderReview():
         tradeEndTime = datetime.combine(datetime.now().date(),time(15))
     else:
         pass
-        # what to do with night trading
+        '''what to do with night trading'''
     
     orderReviewTotalResult['rt_last_enter_datetime'].fillna(datetime(2019,1,1), inplace=True)
     orderReviewTotalResult['rt_last_depart_datetime'].fillna(datetime(2019,1,1), inplace=True)
@@ -82,11 +82,11 @@ def getAllOrderReview():
     # rearange today's order(s) before sending them 
     pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'openDatetime', 'closeDatetime', 
                                        'openPrice', 'closePrice', 'volume', 'direction', 
-                                       "volFac", "range"])
+                                       "volFac", "range", "balanceAtOrder"])
     todayOrderPresented = pd.DataFrame(columns=['column', 'realTrading', 'backtesting'])
     for row in todaysOrder.iterrows():
-        pairComp.loc[len(pairComp), :] = [row[1]['strategyID']] + list(row[1]['rt_index':'rt_range'])
-        pairComp.loc[len(pairComp), :] = [row[1]['strategyID']] + list(row[1]['bt_index':'bt_range'])
+        pairComp.loc[len(pairComp), :] = [row[1]['strategyID']] + list(row[1]['rt_index':'rt_balanceAtOrder'])
+        pairComp.loc[len(pairComp), :] = [row[1]['strategyID']] + list(row[1]['bt_index':'bt_balanceAtOrder'])
         tempDF = pairComp.T
         tempDF.reset_index(inplace=True)
         tempDF.rename(columns={"index": "column", 0: "realTrading", 1: "backtesting"}, inplace=True)
@@ -96,7 +96,7 @@ def getAllOrderReview():
         todayOrderPresented.loc[todayOrderPresented.shape[0], 'column': "backtesting"]= [str(), str(), str()]
         pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'openDatetime', 'closeDatetime', 
                                            'openPrice', 'closePrice', 'volume', 'direction',
-                                           "volFac", "range"])
+                                           "volFac", "range", "balanceAtOrder"])
 
     todayOrderPresented.set_index('column', inplace=True, drop=True)
     
