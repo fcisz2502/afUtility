@@ -23,10 +23,10 @@ def moveCtaTradingData(instrumentList):
         
         tradingBars = pd.read_csv(os.path.join("c:", os.sep, "vnpy-1.9.2", "examples",
                                                "CtaTrading_RBT_"+symbol, 
-                                               instrument+"_trading_bars.csv"))
+                                               instrument+"_df_60m.csv"))
         
         tradingBars.to_csv(os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "cwh", 
-                                        "ctaTradingData", instrument+"_trading_bars.csv"), index=0)
+                                        "ctaTradingData", instrument+"_df_60m.csv"), index=0)
 
 
 
