@@ -6,7 +6,7 @@ def checkHistoryAndHoldingProfit():
     client = pymongo.MongoClient(host='localhost', port=27017)
     db = client.VnTrader_Position_Db
     collection = db["ProbotStrategy_pt"]
-    flt = {'name': "Probot strategy", 'vtSymbol': "rb2010"}
+    flt = {'name': "Probot strategy", 'vtSymbol': "MA005"}
     
     historyProfit = 0
     history_orders = collection.find(flt)[0]["history_orders"]
