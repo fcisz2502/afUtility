@@ -83,7 +83,7 @@ def compare_stock_data(instruments, prefix, tradingBarsPath, error_tick=0):
 
 # --------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    instruments = ['000661', '002008', '000858', '600276', '000333']
+    instruments = ['000661', '002008', '000858', '600276', '000333', '600009', '600309', '601318', '603288']
     # spike5TradingBarFolder =  "C:\\quant\\spike5.0\\realtrading\\realTradingData"
     spike5TradingBarFolder = os.path.join("C:", os.sep, "quant", "spike5.0",
                                           "realtrading", "realTradingData")
