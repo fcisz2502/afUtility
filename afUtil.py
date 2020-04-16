@@ -6,6 +6,13 @@ import threading
 from datetime import datetime, time, timedelta
 from afUtility.mailing import Email
 from afUtility.keyInfo import cwhEmail, zmEmail, zzhEmail
+import numpy as np
+from dateutil import parser
+#from afUtility.keyInfo import machineID
+from vnpy.trader.app.ctaStrategy.ctaTradingOrderReview.ctaTradingOrderReview import CtaTradingOrderReview, RunCtaTradingOrderReview
+from vnpy.trader.app.ctaStrategy.ctaTradingOrderReview.tbSymbol import tbSymbol
+from vnpy.trader.app.ctaStrategy.ctaTradingOrderReview.ctaTradingOrderReviewWithTb import CtaTradingOrderReviewWithTb
+from time import sleep
 
 
 tbSymbol = {"MA": "MA2", "rb": "rb", "bu": "bu"}
@@ -140,15 +147,29 @@ if __name__ == "__main__":
     "MA005": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
                           "paperTrading", "Probot_MA_CtaTrading")
     }
-    instrumentList = ["rb2010", "MA005"]
-    
-    if instrumentList == getTbInstrumentList(instrumentList):
-        thread.thread(target=runSpike5OrderReview,
-                      args=(deepcopy(spike5TradingInstrumentList),
-                            deepcopy(spike5btStartDateDict),
-                            deepcopy(spike5TradingBarFolder))
-                      ).start()
-        coverCtaTradingBarsWithTbData(instrumentList, ctaTradingBarFolderDict)
+
+    tradingInstrumentList = ["MA005", "rb2010"]
+    strategyName = "probot"
+    ProbotBtStartDateDict = {"rb2010": "20200401", "MA005": "20200401"}
+
+    ProbotMongoSetting = {"databaseName": "VnTrader_Position_Db",
+                          "collectionName": "ProbotStrategy_pt",
+                          "flt": {"name": "Probot strategy"}}
+
+    ror = RunCtaTradingOrderReview(CtaTradingOrderReviewWithTb, strategyName)
+    ror.set_mongo(ProbotMongoSetting)
+    ror.set_btStartDateDict(ProbotBtStartDateDict)
+    ror.set_resultFolder(os.path.join(os.sep * 2, "FCIDEBIAN",
+                                      "FCI_Cloud", "dataProcess",
+                                      "future_daily_data",
+                                      "reviewWithTbData"))
+
+    if tradingInstrumentList == getTbInstrumentList(tradingInstrumentList):
+        threading.Thread(target=ror.run,
+                         args=(tradingInstrumentList,)
+                         ).start()
+        print("now is: ", datetime.now())
+        coverCtaTradingBarsWithTbData(tradingInstrumentList, ctaTradingBarFolderDict)
 
 #    if (time(16) <= datetime.now().time() < time(16, 1)
 #            or time(17) <= datetime.now().time() < time(17, 1)
