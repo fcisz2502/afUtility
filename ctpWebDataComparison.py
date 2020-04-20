@@ -7,7 +7,7 @@ from afUtility.contractInfo import futureTickSize, getSymbol
 
                       
 # -------------------------------------------------------------------------
-def checkTradingBars(self, instrumentList, ctpBarFolderDict, strategy):
+def checkTradingBars(instrumentList, ctpBarFolderDict, strategy):
     webBarsDir = os.path.join(os.sep*2, "FCIDEBIAN",
                            "FCI_Cloud", "dataProcess",
                            "future_daily_data")
@@ -17,11 +17,11 @@ def checkTradingBars(self, instrumentList, ctpBarFolderDict, strategy):
         tickSize = futureTickSize[symbol]
         webBars = pd.read_csv(os.path.join(webBarsDir, instrument+".csv"),
                               parse_dates=['datetime'])
-        
+
         ctpBars = pd.read_csv(os.path.join(ctpBarFolderDict[strategy][symbol],
                                            instrument+"_df_60m.csv"),
                               parse_dates=['datetime'])
-        
+
         if ctpBars.iloc[-1]['datetime'].time() > time(22, 50):
             # night section
             numberOfBars = 2     
@@ -51,12 +51,14 @@ def checkTradingBars(self, instrumentList, ctpBarFolderDict, strategy):
         compRes['lowDiff'] = compRes['low_ctp'] - compRes['low_web']
         compRes['closeDiff'] = compRes['close_ctp'] - compRes['close_web']
         
+        email = Email()
+        email.receivers = [cwhEmail]
+        email.set_subjectPrefix(instrument)
         if sum((compRes.loc[:, 'openDiff':'closeDiff'] > tickSize).sum()) |  \
         compRes['dt>5min'].sum():
-            email = Email()
-            email.set_subjectPrefix("check-trading-bars-with-joinquant")
-            email.receivers = cwhEmail
-            email.send(instrument, compRes.T.to_html(justify='left'))
+            email.send("check-trading-bars-with-joinquant", compRes.T.to_html(justify='left'))
+        else:
+            email.send("check-trading-bars-with-joinquant", "trading bars in line with joinquant bars")
         
 #            return compRes
     
@@ -65,10 +67,10 @@ def checkTradingBars(self, instrumentList, ctpBarFolderDict, strategy):
 if __name__ == "__main__":    
     ctpBarFolderDict = {"probot":{"rb": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", 
                                                      "ctaTrading", "paperTrading", 
-                                                     "Probot_rb_CtaTrading"),
+                                                     "probot_rb"),
                                   "MA": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", 
                                                      "ctaTrading", "paperTrading", 
-                                                     "Probot_MA_CtaTrading")
+                                                     "probot_MA")
                                   },
                         "csdual":{"rb": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", 
                                                      "ctaTrading", "paperTrading", 
