@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 
 # -----------------------------------------------------------------------------
 def calInstrumentPNL(instrument, database, collection, flt):
+    # func to cal a single instrument's pnl use data in mongo.
+    # it returns history orders' pnl and current orders' pnl.
     commission = 1.1/10000
     lotSize = 10
     myclient = pymongo.MongoClient('mongodb://localhost:27017/')        
@@ -62,7 +64,7 @@ def calInstrumentPNL(instrument, database, collection, flt):
 if __name__ == "__main__":
     instrument = "MA009"
     database='VnTrader_Position_Db'
-    collection='SpikeStrategy'
+    collection='ProbotStrategy_pt'
     flt = {'name': 'Probot strategy', 'vtSymbol': instrument}
     cpnl, hpnl = calInstrumentPNL(instrument, database, collection, flt)
     
