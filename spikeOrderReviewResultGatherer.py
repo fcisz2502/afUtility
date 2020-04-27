@@ -14,7 +14,7 @@ def getAllOrderReview():
     '''
 #    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", "spike stocks", "orderReview")
-    checkList = ["VM2_spike2", "VM2_spikeOLOS", "VM4_spike2", "VM5_spike2"]
+    checkList = ["VM2CF_spike2", "VM2CF_spikeOLOS", "VM4YYC_spike2", "VM5QS_spike2"]
     today = str(datetime.today().date())
     
     orderReviewTotalResult = pd.DataFrame()
