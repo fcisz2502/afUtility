@@ -93,15 +93,18 @@ class CtaTradingOrderReviewResultGatherer(object):
             if self.isTbDataUsed:
                 try:
                     instrument = self.tradingBarsPathDict.keys()[-1]
-                    lastBacktestingDatetime = pd.read_csv(os.path.join(self.tradingBarsPathDict[instrument], instrument+'_df_60m_ctp.csv'), 
-                                              parse_dates=['datetime'], 
-                                              index_col='datetime').index[-1]
-                    if abs(lastBacktestingDatetime - datetime.combine(lastBacktestingDatetime.date(), time(15))) < timedelta(minutes=2.5):
+                    with open(os.path.join(self.tradingBarsPathDict[instrument], "lastOrderReviewDatetime.txt"), 'r') as f:
+                        lastOrderReviewDatetime = parser.parse(f.read())
+                    if lastOrderReviewDatetime > datetime(2020, 1, 1) and \
+                    abs(lastOrderReviewDatetime - datetime.combine(lastOrderReviewDatetime.date(), time(15))) < timedelta(minutes=2.5):
                         # set time between 1500 to 2100 should be all fine.
-                        tradeBeginDatetime = datetime.combine(lastBacktestingDatetime.date(), time(16))
+                        tradeBeginDatetime = datetime.combine(lastOrderReviewDatetime.date(), time(16))
+                    else:
+                        self.email.send("lastOrderReview datetime is befort year of 2020 or datetime.time is not near 1500.", str())
+                        raise Exception("lastOrderReview datetime is befort year of 2020 or datetime.time is not near 1500.")
                 except Exception, e:
-                    raise Exception("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data.")
                     self.email.send("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data.", repr(e))
+                    raise Exception("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data, %s." % repr(e))
             else:
                 # joinquant data is used
                 tradeBeginDatetime = datetime.combine(datetime.now().date(), time(0))
@@ -117,6 +120,7 @@ class CtaTradingOrderReviewResultGatherer(object):
             elif isinstance(startDate, datetime):
                 tradeBeginDatetime = datetime.combine(startDate.date(), time(0))
             else:
+                self.email.send("please input startDate in str or in datetime format in ctaTradingOrderReviewResultGatherer.", str())
                 raise Exception("please input startDate in str or in datetime format.")
             if 0 == tradeBeginDatetime.weekday():
                 tradeBeginDatetime -= timedelta(hours=4+48)
@@ -231,7 +235,7 @@ if __name__ == "__main__":
     gatherer.reviewResultFolder = reviewResultFolder
     gatherer.sendRecentOrders(startDate=None)
 
-    ''' Tb data.
+    '''Tb data.
     Run this sector on according mathine so that it will 
     get the tradingBarsFolderDict correctly'''
 #    gatherer.reviewResultFolder = reviewResultFolderTb
