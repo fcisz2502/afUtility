@@ -5,8 +5,7 @@ from email.mime.text import MIMEText
 from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
-from keyInfo import cwhEmail, zzhEmail, zmEmail, senderEmail, senderEmailPassword 
-from keyInfo import machineID
+from afUtility.keyInfo import cwhEmail, zzhEmail, zmEmail, senderEmail, senderEmailPassword, machineID
 
 
 # -----------------------------------------------------------------------------
@@ -81,8 +80,8 @@ class Email(object):
 if __name__ == '__main__':
     email = Email()
 #    email.set_subjectPrefix('testing')
-    email.receivers = [cwhEmail]
-    email.send('testing', str(), files=["C:\\applepy\\test.csv"])
+#    email.receivers = [cwhEmail]
+#    email.send('testing', str(), files=["C:\\applepy\\test.csv"])
 #    order={'order1': {'openPrice': 10, 'closePrice': 1, 'pnl': 9}}
 #    email.send('Horward', str(order), mailBox=[cwhEmail])
     
