@@ -33,7 +33,7 @@ class TickDatetimeMonitor(object):
         self.logger.info("TickDatetimeMonitor initialization done.")
 
     # -------------------------------------------------------------------------
-    def tickDatetimeMonitor(self): 
+    def run(self): 
         for instrument in self.instrumentList:
             if abs(parser.parse(self.red.get(instrument+'TickTime')) - datetime.now()) > timedelta(minutes=self.deviatesMinutes):
                 self.email.send("%s's tick datetime deviates from local time more than %s minutes." 
@@ -49,5 +49,5 @@ if __name__ == "__main__":
     tdm = TickDatetimeMonitor()
     tdm.instrumentList = ['600276', 'rb2101', 'bu2012', 'm2101']
     while True:
-        tdm.tickDatetimeMonitor()
+        tdm.run()
         sleep(1)
