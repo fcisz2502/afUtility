@@ -64,6 +64,7 @@ class CtaTradingOrderReviewResultGatherer(object):
                     # doc[18:-7] => 'machineID_strategy'
                     checkListCopy.remove(doc[18:-7].lower())
                     orderReviewTotalResult = pd.concat([orderReviewTotalResult, pd.read_csv(os.path.join(self.reviewResultFolder, doc))], sort=False)
+
         if len(checkListCopy):
             self.subjectSuffix = "Order review result(s) from %s have not been found!" %checkListCopy
         else:
@@ -144,6 +145,7 @@ class CtaTradingOrderReviewResultGatherer(object):
             # ??????????????????????????????????????????
             # what to do with night trading'''
             pass
+        
         if len(orderReviewTotalResult):
             orderReviewTotalResult['rt_openDatetime'].fillna(datetime(2019,1,1), inplace=True)
             orderReviewTotalResult['rt_closeDatetime'].fillna(datetime(2019,1,1), inplace=True)
@@ -156,6 +158,7 @@ class CtaTradingOrderReviewResultGatherer(object):
                                                     orderReviewTotalResult['bt_openDatetime']>tradeBeginDatetime) | (
                                                     (tradeBeginDatetime < orderReviewTotalResult['bt_closeDatetime']) & (
                                                             orderReviewTotalResult['bt_closeDatetime'] < tradeEndDatetime))]
+
         else:
             self.recentOrders = pd.DataFrame()
     
@@ -163,7 +166,7 @@ class CtaTradingOrderReviewResultGatherer(object):
     def rearangeRecentOrders(self):
         if self.recentOrders is None:
             self.getRecentOrders()
-        print('recentOrders.column ', self.recentOrders.columns)
+            
         # rearange today's order(s) before sending them 
         columnList = ['instrument', 'orderNumber', 'openDatetime', 'closeDatetime', 
                       'openPrice', 'closePrice', 'strategy', 'volume', 'direction', 
@@ -210,35 +213,40 @@ if __name__ == "__main__":
     strategyName = "csrProbot"
     strategyCheckList = ["VM2CF_csrProbot"]
     
-#    csrProbotTradingBarFolderDict = {
-#        "rb2010": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
-#                               "paperTrading", "probot_rb"),
-#        "MA009": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
-#                              "paperTrading", "probot_MA")
-#    }
-    
-    # jointquant data bt result
-    reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", 
-                                      "dataProcess", "future_daily_data", 
-                                      strategyName.lower()+"OrderReview")
-    # tb data bt result
-    reviewResultFolderTb = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", 
-                                        "future_daily_data", "reviewWithTbData",
-                                        strategyName.lower()+"OrderReview")
-    
     gatherer = CtaTradingOrderReviewResultGatherer(strategyName)
 #    gatherer.email.receivers.append(zmEmail)
     gatherer.email.set_receivers([cwhEmail])
     
     gatherer.checkList= strategyCheckList[:]
     
+    # -------------------------------------------------------------------------
     '''jq data'''
-    gatherer.reviewResultFolder = reviewResultFolder
-    gatherer.sendRecentOrders(startDate=None)
+    # jointquant data bt result
+#    reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", 
+#                                      "dataProcess", "future_daily_data", 
+#                                      strategyName.lower()+"OrderReview")
+#    gatherer.reviewResultFolder = reviewResultFolder
+#    gatherer.sendRecentOrders(startDate=None)
 
+    # -------------------------------------------------------------------------
     '''Tb data.
     Run this sector on according mathine so that it will 
     get the tradingBarsFolderDict correctly'''
-#    gatherer.reviewResultFolder = reviewResultFolderTb
-#    gatherer.tradingBarsPathDict = csrProbotTradingBarFolderDict
-#    gatherer.sendRecentOrders(startDate=None)
+    # tb data bt result
+    reviewResultFolderTb = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", 
+                                        "future_daily_data", "reviewWithTbData",
+                                        strategyName.lower()+"OrderReview")
+    
+    csrProbotTradingBarFolderDict = {
+        "rb2101": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
+                               "paperTrading", "csrProbot_rb"),
+        "bu2012": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
+                              "paperTrading", "csrProbot_bu"),
+        "m2101": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
+                              "paperTrading", "csrProbot_m"),
+        "p2101": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
+                              "paperTrading", "csrProbot_p")
+    }
+    gatherer.reviewResultFolder = reviewResultFolderTb
+    gatherer.tradingBarsPathDict = csrProbotTradingBarFolderDict
+    gatherer.sendRecentOrders(startDate=None)
