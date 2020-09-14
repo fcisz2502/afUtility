@@ -11,6 +11,8 @@ def getAllOrderReview():
     ordersMonitor will check history orders,
     compare today's orders in real trading with thoes in backtesting. 
     '''
+    email = Email()
+    email.set_subjectPrefix(str())
 #    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", "spike stocks", "orderReview")
     checkList = ["VM2CF_spike2", "VM2CF_spikeOLOS", "VM4YYC_spike2", 
@@ -65,6 +67,13 @@ def getAllOrderReview():
                                             (tradeBeginTime < orderReviewTotalResult['bt_closeDatetime']) & (
                                                     orderReviewTotalResult['bt_closeDatetime'] < tradeEndTime))]
     
+    volumeCheck = todaysOrder.loc[: ,['strategyID', 'diff_volume']]
+    volumeCheck['diff_volume_bool'] = volumeCheck.loc[:, 'diff_volume'].map(lambda x: 0!=int(x))
+    if volumeCheck.loc[:, 'diff_volume_bool'].sum():
+        volumeCheck.set_index("strategyID", drop=True, inplace=True)
+#        email.receivers = cwhEmail
+        email.send('spike order review volume difference.', volumeCheck.to_html(justify='left'))
+    
     # rearange today's order(s) before sending them 
     pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'openDatetime', 'closeDatetime', 
                                        'openPrice', 'closePrice', 'volume', 'direction'])
@@ -89,9 +98,6 @@ def getAllOrderReview():
     
     todayOrderPresented.fillna(str(),inplace=True)
     
-    email = Email()
-    email.set_subjectPrefix(str())
-#    email.receivers = cwhEmail
     email.receivers.append(zmEmail)
     email.send("Review spike's order(s) today: " + subjectSuffix, 
                todayOrderPresented.to_html(justify='left'),
