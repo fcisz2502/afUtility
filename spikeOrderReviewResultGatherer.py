@@ -67,7 +67,7 @@ def getAllOrderReview():
                                                     orderReviewTotalResult['bt_closeDatetime'] < tradeEndTime))]
     
     volumeCheck = todaysOrder.loc[: ,['strategyID', 'diff_volume']]
-    volumeCheck.fillna(0, inplace=True)
+    volumeCheck.fillna(1, inplace=True)
     volumeCheck['diff_volume_bool'] = volumeCheck.loc[:, 'diff_volume'].map(lambda x: 0!=int(x))
     if volumeCheck.loc[:, 'diff_volume_bool'].sum():
         volumeCheck.set_index("strategyID", drop=True, inplace=True)
