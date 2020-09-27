@@ -15,8 +15,7 @@ def getAllOrderReview():
     email.set_subjectPrefix(str())
 #    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", "spike stocks", "orderReview")
-    checkList = ["VM2CF_spike2", "VM2CF_spikeOLOS", "VM4YYC_spike2", 
-                 "VM4YYC_spikeOLOS", "VM5QS_spike2", "VM5QS_spikeOLOS"]
+    checkList = [ "VM5QS_spike2", "VM5QS_spikeOLOS", "VM4YYC_spikeOLOS"]
     today = str(datetime.today().date())
     
     orderReviewTotalResult = pd.DataFrame()
@@ -68,6 +67,7 @@ def getAllOrderReview():
                                                     orderReviewTotalResult['bt_closeDatetime'] < tradeEndTime))]
     
     volumeCheck = todaysOrder.loc[: ,['strategyID', 'diff_volume']]
+    volumeCheck.fillna(0, inplace=True)
     volumeCheck['diff_volume_bool'] = volumeCheck.loc[:, 'diff_volume'].map(lambda x: 0!=int(x))
     if volumeCheck.loc[:, 'diff_volume_bool'].sum():
         volumeCheck.set_index("strategyID", drop=True, inplace=True)
