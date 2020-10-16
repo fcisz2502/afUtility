@@ -1,10 +1,9 @@
 import pandas as pd
 import os
-from pandas.tseries.offsets import Minute
 from datetime import datetime, time, timedelta
 import jqdatasdk as jq
 from afUtility.keyInfo import jqAccount, jqPassword, cwhEmail
-from afUtility.mailing import Email
+from afUtility.mailing import Email, cwhEmail
 jq.auth(jqAccount, jqPassword)
 
 
@@ -83,60 +82,74 @@ def get_symbol(instrument):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def getFutueDataFromJointquant(futures_, dataSavingPath_):
-    today = date.today().strftime('%Y-%m-%d')
-    tomorrow = (date.today() + timedelta(days=1)).strftime('%Y-%m-%d')
+def getFutueDataFromJointquant(instruments_, dataSavingPath_):
+    tenDaysBefore = (datetime.now()-timedelta(days=10)).strftime('%Y-%m-%d')
+    tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     email = Email()
-    email.receivers = [cwhEamil]
-    for future in futures_:
-        symbol = get_symbol(future)
-        print('future is %s, symbol is %s.' %(future, symbol))
-        future_with_suffix = None
+    email.receivers = [cwhEmail]
+    for instrument in instruments_:
+        symbol = get_symbol(instrument)
+        print('instrument is %s, symbol is %s.' %(instrument, symbol))
+        instrument_with_suffix = None
         for key, value in future_exchange_house_dict.items():
             if symbol in value:
-                future_with_suffix = future+'.'+key
-        if future_with_suffix is None: 
-            email.send("%s, future with suffix is None" %future, 'getting future data from jointquant has stop.')
+                instrument_with_suffix = instrument.upper()+'.'+key
+        if instrument_with_suffix is None:
+            email.send("%s, instrument with suffix is None" %instrument,
+                       'getting instrument data from jointquant has stopped.')
             return
 
-        # get future data from jointquant
-        df = jq.get_price(future_with_suffix, start_date=today, end_date=tomorrow, frequency='1m', skip_paused=False, fq='pre')
-        if len(df) == 0:
-            email.send("%s, get empty dataframe from jointquant"%future_with_suffix, 
-                "one of the reason might be that %s has stop trading, "
-                "there is no trading data from today on."%future)
-            return
+        # get data from jointquant
+        jqdata = jq.get_price(instrument_with_suffix, start_date=tenDaysBefore, end_date=tomorrow, frequency='1m', skip_paused=False, fq='pre')
         
-        df['datetime'] = df.index
-        df['datetime'] = df['datetime'] - Minute(1)
-        df.set_index('datetime', inplace=True, drop=True)
+        jqdata['datetime'] = jqdata.index
+        jqdata['datetime'] = jqdata['datetime'] - timedelta(minutes=1)
+        jqdata.set_index('datetime', inplace=True, drop=True)
 
         # resample to 60 minutes
-        hour_data = pd.DataFrame()
-        hour_data['open'] = df['open'].resample('60T', closed='left', label='left').first()
-        hour_data['high'] = df['high'].resample('60T', closed='left', label='left').max()
-        hour_data['low'] = df['low'].resample('60T', closed='left', label='left').min()
-        hour_data['close'] = df['close'].resample('60T', closed='left', label='left').last()
-        hour_data['volume'] = df['volume'].resample('60T', closed='left', label='left').sum()
-        hour_data = hour_data[hour_data['volume'] != 0]
-        hour_data = hour_data.dropna()
-        hour_data = hour_data[['open', 'high', 'low', 'close']]
+        jq_hour_data = pd.DataFrame()
+        jq_hour_data['open'] = jqdata['open'].resample('60T', closed='left', label='left').first()
+        jq_hour_data['high'] = jqdata['high'].resample('60T', closed='left', label='left').max()
+        jq_hour_data['low'] = jqdata['low'].resample('60T', closed='left', label='left').min()
+        jq_hour_data['close'] = jqdata['close'].resample('60T', closed='left', label='left').last()
+        jq_hour_data['volume'] = jqdata['volume'].resample('60T', closed='left', label='left').sum()
+        jq_hour_data = jq_hour_data[jq_hour_data['volume'] != 0]
+        jq_hour_data = jq_hour_data.dropna()
+        jq_hour_data = jq_hour_data[['open', 'high', 'low', 'close']]
 
         # history data
         # his_data = pd.read_csv("\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\future_daily_data\\" + future + '.csv')
-        his_data = pd.read_csv(os.path.join(dataSavingPath_, future+'.csv'))
-        his_data['date'] = pd.to_datetime(his_data['datetime']).apply(lambda x: x.strftime("%Y-%m-%d"))
-        his_data = his_data[his_data['date'] != today]
-        his_data = his_data[['datetime', 'open', 'high', 'low', 'close']]
-        his_data.set_index('datetime', inplace=True, drop=True)
+        his_data = pd.read_csv(os.path.join(dataSavingPath_, instrument+'.csv'),
+                               parse_dates=['datetime'], index_col='datetime')
+        time_now = datetime.now().time()
+        # if fetch data after 2300 and before 800,
+        # last trading section is a night section or night section is cancelled then there is no data
+        if time_now > time(23) or time_now < time(8):
+            join_datetime = datetime.combine(his_data.index.to_list()[-1].date(), time(16)
+                                              ).strftime("%Y-%m-%d %H:%M:%S")
+        # if fetch at noon or after 1500,
+        # go back to last night at 2300,
+        # then fetch history data up to last night and get the last bar's date, go back to that date's 1600
+        else:
+            join_datetime = datetime.combine((datetime.now()-timedelta(days=1)).date(), time(23))
+            join_datetime = datetime.combine(his_data.loc[:join_datetime, :].index.date(), time(16)
+                                              ).strftime("%Y-%m-%d %H:%M:%S")
 
-        # concat
-        new_data = pd.concat([his_data, hour_data])
-        new_data.drop_duplicates(inplace=True)
-        # new_data = new_data[~(new_data['high'] == new_data['low'])]
+        if 0 == len(jq_hour_data.loc[join_datetime:, :]):
+            email.send("%s, get empty dataframe from jointquant"%instrument_with_suffix,
+                "one of the reasons might be that %s has stopped trading, "
+                "there is no trading data from today on."%instrument)
+            return
 
-        # new_data.to_csv(os.path.join(dataSavingPath_, future+'.csv'))
-        print(new_data.tail(5))
+        # keep update today's data to avoid data error during night or morning section
+        # if there's any, I think jointquant will fix it asap
+        # what about afternoon section data error? Well, I have no idea.
+        # order review will detect data differences if there is any
+        full_bar = pd.concat([his_data, jq_hour_data.loc[join_datetime:, :]])
+        full_bar.drop_duplicates(keep='first', inplace=True)
+
+        full_bar.to_csv(os.path.join(dataSavingPath_, instrument+'.csv'))
+        # print(full_bar.tail(5))
 
 
 # -----------------------------------------------------------------------------
@@ -150,5 +163,5 @@ if __name__ == "__main__":
     # get future data
     future_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud",
                                "dataProcess", "future_daily_data")
-    # futures= ['rb2010', 'm2101']
-    # getFutueDataFromJointquant(futures, future_data_path)
+    futures= ['rb2101', 'm2101']
+    getFutueDataFromJointquant(futures, future_data_path)
