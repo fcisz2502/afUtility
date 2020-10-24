@@ -9,25 +9,34 @@ jq.auth(jqAccount, jqPassword)
 
 
 # -----------------------------------------------------------------------------
-def getJointquantData(stocks, dataSavingPath, fre='60m'):
+def getJointquantData(stocks, dataSavingPath_, fre='60m'):
     # stocks = ['002475', '000333', '000661', '000858', '600036', '600276', '600309', '600585', '603288', '601318', '600009']
     start_date = '2020-01-01'
-    end_date = datetime.today().strftime("%Y-%m-%d")
+    tomorrow = (datetime.combine(datetime.today().date(), time(0))+timedelta(hours=24)).strftime("%Y-%m-%d")
+    todayTime0 = datetime.combine(datetime.today().date(), time(0)).strftime("%Y-%m-%d %H:%M:%S")
     
-    if not os.path.exists(dataSavingPath):
-        os.makedirs(dataSavingPath)
+    if not os.path.exists(dataSavingPath_):
+        os.makedirs(dataSavingPath_)
         
     for stock in stocks:
+        print('getting to %s.' % stock)
         security = jq.normalize_code(stock)
         # df = get_bars(security, 100, unit='1m', fields=['date', 'open', 'high', 'low', 'close'],
         #               include_now=False, end_dt=None, fq_ref_date=None)
-        df2 = jq.get_price(security, start_date, end_date, frequency=fre, skip_paused=True, fq='pre')
-        df2 = df2.loc[:, ['open', 'high', 'low', 'close']]
-        df2.loc[:, 'datetime'] = df2.index
-        df2.reset_index(drop=True, inplace=True)
-        data = df2.loc[:, ['datetime', 'open', 'high', 'low', 'close']]
-        data.loc[:, 'ft'] = 0
-        data.to_csv(os.path.join(dataSavingPath, stock +".csv"), index=0)
+        jqdata = jq.get_price(security, start_date, tomorrow, frequency=fre, skip_paused=True, fq='pre')
+        jqdata = jqdata.loc[:, ['open', 'high', 'low', 'close']]
+        jqdata.loc[:, 'ft'] = 0
+        jqdata = jqdata.loc[:, ['open', 'high', 'low', 'close', 'ft']]
+        jqdata.index.rename("datetime", inplace=True)
+
+        previous_data = pd.read_csv(os.path.join(dataSavingPath_, stock + ".csv"),
+                                  parse_dates=['datetime'],
+                                  index_col='datetime')
+        full_bars = pd.concat([previous_data.loc[:todayTime0], jqdata.loc[todayTime0:, :]])
+        full_bars.drop_duplicates(keep='first', inplace=True)
+
+        full_bars.to_csv(os.path.join(dataSavingPath_, stock + ".csv"))
+    print("Getting jq data done. Data has been saved to: \n%s." % dataSavingPath_)
     
 # for stock in stocks:
 #     data['open'] = data['open'] * 1000
@@ -74,7 +83,7 @@ def get_symbol(instrument):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def getFutueDataFromJointquant(futures_):
+def getFutueDataFromJointquant(futures_, dataSavingPath_):
     today = date.today().strftime('%Y-%m-%d')
     tomorrow = (date.today() + timedelta(days=1)).strftime('%Y-%m-%d')
     email = Email()
@@ -114,7 +123,8 @@ def getFutueDataFromJointquant(futures_):
         hour_data = hour_data[['open', 'high', 'low', 'close']]
 
         # history data
-        his_data = pd.read_csv("\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\future_daily_data\\" + future + '.csv')
+        # his_data = pd.read_csv("\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\future_daily_data\\" + future + '.csv')
+        his_data = pd.read_csv(os.path.join(dataSavingPath_, future+'.csv'))
         his_data['date'] = pd.to_datetime(his_data['datetime']).apply(lambda x: x.strftime("%Y-%m-%d"))
         his_data = his_data[his_data['date'] != today]
         his_data = his_data[['datetime', 'open', 'high', 'low', 'close']]
@@ -125,7 +135,7 @@ def getFutueDataFromJointquant(futures_):
         new_data.drop_duplicates(inplace=True)
         # new_data = new_data[~(new_data['high'] == new_data['low'])]
 
-        # new_data.to_csv("\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\future_daily_data\\" + future + '.csv')
+        # new_data.to_csv(os.path.join(dataSavingPath_, future+'.csv'))
         print(new_data.tail(5))
 
 
@@ -133,5 +143,12 @@ def getFutueDataFromJointquant(futures_):
 if __name__ == "__main__":
     stocks = ['002475', '000333', '000661', '000858', '600036', 
               '600276', '600309', '600585', '603288', '601318', '600009']
-    dataSavingPath = os.path.join('c:', os.sep, 'cwh',  'spike stocks')
-    getJointquantData(stocks, dataSaveingPath)
+    stock_data_path = os.path.join('c:', os.sep, 'jqData',  'jqData')
+    # getJointquantData(stocks, stock_data_path)
+
+    # -------------------------------------------------------------------------
+    # get future data
+    future_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud",
+                               "dataProcess", "future_daily_data")
+    # futures= ['rb2010', 'm2101']
+    # getFutueDataFromJointquant(futures, future_data_path)
