@@ -8,6 +8,7 @@ Created on Sat Oct 24 15:06:12 2020
 # cal win/loss rate
 import pymongo
 import copy
+import pandas as pd
 
 
 # -----------------------------------------------------------------------------
@@ -42,11 +43,13 @@ class OrderStatistic(object):
         if not list(collection.find(flt)):
             flt = {'strategy_name': self._strategy, 'symbol': self._instrument}
             
-        result = list(collection.find(flt))[0]
+        if list(collection.find(flt)):
+            result = list(collection.find(flt))[0]
+            his_orders = result["history_orders"]
+        else:
+            his_orders = {}
     
-        _history_orders = result["history_orders"]
-    
-        for key, value in _history_orders.items():
+        for key, value in his_orders.items():
             self._history_orders["_".join(
                     [self._strategy, str(strategy_version), key])] = value
     
@@ -121,7 +124,22 @@ class OrderStatistic(object):
 
 # -----------------------------------------------------------------------------        
 if __name__ == "__main__":
-    ot = OrderStatistic()
-    ot.set_instrument("000333")
-    ot.cal_statistic()
-    orders_info = ot.get_order_info_dict()
+    orders_sta = {}
+#    instruments = ['002008', '600887', 
+#                   '000333', '600276', '000661',
+#                   '000858', '600036', '601318',
+#                   '603288', '600009', '600585',
+#                   '002475', '600309']
+    instruments = ['000333', '002008']
+    for instrument in instruments:
+        print("getting to %s." %instrument)
+        ot = OrderStatistic()
+        ot.set_instrument(instrument)
+        ot.cal_statistic()
+        orders_sta[instrument] = ot.get_order_info_dict()
+    
+    orders_sta_df = pd.DataFrame(orders_sta).T
+    columns = ['total_orders', 'total_win_rate', 'total_loss_rate', 'total_even_rate',
+               'long_orders', 'long_win_rate', 'long_loss_rate', 'long_even_rate', 
+               'short_orders', 'short_win_rate', 'short_loss_rate', 'short_even_rate']
+    orders_sta_df = orders_sta_df.loc[:, columns]
