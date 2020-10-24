@@ -83,7 +83,7 @@ def get_symbol(instrument):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-def getFutueDataFromJointquant(futures_, dataSavingPath_):
+def getFutureDataFromJointquant(futures_, dataSavingPath_):
     today = date.today().strftime('%Y-%m-%d')
     tomorrow = (date.today() + timedelta(days=1)).strftime('%Y-%m-%d')
     email = Email()
@@ -151,4 +151,4 @@ if __name__ == "__main__":
     future_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud",
                                "dataProcess", "future_daily_data")
     # futures= ['rb2010', 'm2101']
-    # getFutueDataFromJointquant(futures, future_data_path)
+    # getFutureDataFromJointquant(futures, future_data_path)
