@@ -157,4 +157,4 @@ if __name__ == "__main__":
                'long_orders', 'long_win_rate', 'long_loss_rate', 'long_even_rate', 
                'short_orders', 'short_win_rate', 'short_loss_rate', 'short_even_rate']
     orders_sta_df = orders_sta_df.loc[:, columns]
-    orders_sta_df.to_csv("c:\\project\\orders_statistic.csv")
+#    orders_sta_df.to_csv("c:\\project\\orders_statistic.csv")
