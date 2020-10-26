@@ -4,7 +4,7 @@ Created on Sat Oct 24 15:06:12 2020
 
 @author: cwh
 """
-
+from __future__ import division
 # cal win/loss rate
 import pymongo
 import copy
@@ -26,8 +26,16 @@ class OrderStatistic(object):
         self._short_losses = 0
         self._short_evens = 0
         self._order_info_dict = {}
+        self._isToGetVersion5Orders = True
+        self._isToGetPreviousVersionOrders = True
     
     # -------------------------------------------------------------------------
+    def set_isToGetVersion5Orders(self, x):
+        self._isToGetVersion5Orders = x
+    
+    def set_isToGetPreviousVersionOrders(self, x):
+        self._isToGetPreviousVersionOrders = x
+        
     def set_instrument(self, instrument):
         self._instrument = str(instrument)
         
@@ -55,13 +63,15 @@ class OrderStatistic(object):
     
     # -------------------------------------------------------------------------
     def get_history_orders(self):
-        if self._instrument+"_"+self._strategy+"_3.x" in self._db.list_collection_names():
-            collection = self._db[self._instrument+"_"+self._strategy+"_3.x"]
-            self.get_orders(collection, 3)
+        if self._isToGetPreviousVersionOrders:
+            if self._instrument+"_"+self._strategy+"_3.x" in self._db.list_collection_names():
+                collection = self._db[self._instrument+"_"+self._strategy+"_3.x"]
+                self.get_orders(collection, 3)
             
-        if self._strategy+"_5.0" in self._db.list_collection_names():
-            collection = self._db[self._strategy+"_5.0"]
-            self.get_orders(collection, 5)
+        if self._isToGetVersion5Orders:
+            if self._strategy+"_5.0" in self._db.list_collection_names():
+                collection = self._db[self._strategy+"_5.0"]
+                self.get_orders(collection, 5)
     
     # -------------------------------------------------------------------------        
     def cal_statistic(self):
@@ -157,4 +167,4 @@ if __name__ == "__main__":
                'long_orders', 'long_win_rate', 'long_loss_rate', 'long_even_rate', 
                'short_orders', 'short_win_rate', 'short_loss_rate', 'short_even_rate']
     orders_sta_df = orders_sta_df.loc[:, columns]
-#    orders_sta_df.to_csv("c:\\project\\orders_statistic.csv")
+    orders_sta_df.to_csv("c:\\quant\\all_orders_statistic.csv")
