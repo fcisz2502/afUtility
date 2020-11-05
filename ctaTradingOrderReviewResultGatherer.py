@@ -94,23 +94,27 @@ class CtaTradingOrderReviewResultGatherer(object):
         if self.orderReviewTotalResult is None:
             self.getAllOrderReview()
         orderReviewTotalResult = self.orderReviewTotalResult.copy()
-        
+
         if startDate is None:
             if self.isTbDataUsed:
                 try:
                     instrument = self.tradingBarsPathDict.keys()[-1]
-                    with open(os.path.join(self.tradingBarsPathDict[instrument], "lastOrderReviewDatetime.txt"), 'r') as f:
-                        lastOrderReviewDatetime = parser.parse(f.read())
+                    if os.path.exists(os.path.join(self.tradingBarsPathDict[instrument])):
+                        with open(os.path.join(self.tradingBarsPathDict[instrument], "lastOrderReviewDatetime.txt"), 'r') as f:
+                            lastOrderReviewDatetime = parser.parse(f.read())
+                    else:
+                        with open(os.path.join(self.tradingBarsPathDict[instrument]+"_toRollout", "lastOrderReviewDatetime.txt"), 'r') as f:
+                            lastOrderReviewDatetime = parser.parse(f.read())
                     if lastOrderReviewDatetime > datetime(2020, 1, 1) and \
                     abs(lastOrderReviewDatetime - datetime.combine(lastOrderReviewDatetime.date(), time(15))) < timedelta(minutes=2.5):
                         # set time between 1500 to 2100 should be all fine.
                         tradeBeginDatetime = datetime.combine(lastOrderReviewDatetime.date(), time(16))
                     else:
-                        self.email.send("lastOrderReview datetime is befort year of 2020 or datetime.time is not near 1500.", str())
-                        raise Exception("lastOrderReview datetime is befort year of 2020 or datetime.time is not near 1500.")
+                        self.email.send("lastOrderReview datetime is befort 2020 or datetime.time is not near 1500.", str())
+                        raise Exception("lastOrderReview datetime is befort 2020 or datetime.time is not near 1500.")
                 except Exception, e:
-                    self.email.send("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data.", repr(e))
-                    raise Exception("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data, %s." % repr(e))
+                    self.email.send("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data.", instrument + " "+ repr(e))
+                    raise Exception("cannot fetch last backtesting datetime in getRecentOrders() when using tradeblazer data, %s, %s." %(repr(e), instrument))
             else:
                 # joinquant data is used
                 tradeBeginDatetime = datetime.combine(datetime.now().date(), time(0))
@@ -207,6 +211,7 @@ class CtaTradingOrderReviewResultGatherer(object):
                         recentOrderPresented_.to_html(justify='left'),
                         files = [self.fileSaveAndAttached])
     
+        
     
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -214,8 +219,8 @@ if __name__ == "__main__":
     strategyCheckList = ["VM2CF_csrProbot"]
     
     gatherer = CtaTradingOrderReviewResultGatherer(strategyName)
-#    gatherer.email.receivers.append(zmEmail)
-    gatherer.email.set_receivers([cwhEmail])
+    gatherer.email.receivers.append(zmEmail)
+#    gatherer.email.set_receivers([cwhEmail])
     
     gatherer.checkList= strategyCheckList[:]
     
@@ -229,10 +234,10 @@ if __name__ == "__main__":
 #    gatherer.sendRecentOrders(startDate=None)
 
     # -------------------------------------------------------------------------
-    '''Tb data.
-    Run this sector on according mathine so that it will 
-    get the tradingBarsFolderDict correctly'''
-    # tb data bt result
+#    '''Tb data.
+#    Run this sector on according mathine so that it will 
+#    get the tradingBarsFolderDict correctly'''
+#    # tb data bt result
     reviewResultFolderTb = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", 
                                         "future_daily_data", "reviewWithTbData",
                                         strategyName.lower()+"OrderReview")
