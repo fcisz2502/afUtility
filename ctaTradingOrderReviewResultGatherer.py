@@ -98,6 +98,7 @@ class CtaTradingOrderReviewResultGatherer(object):
         if startDate is None:
             if self.isTbDataUsed:
                 try:
+                    print("self.tradingBarsPathDict.keys() is: ", self.tradingBarsPathDict.keys())
                     instrument = self.tradingBarsPathDict.keys()[-1]
                     if os.path.exists(os.path.join(self.tradingBarsPathDict[instrument])):
                         with open(os.path.join(self.tradingBarsPathDict[instrument], "lastOrderReviewDatetime.txt"), 'r') as f:
@@ -138,11 +139,22 @@ class CtaTradingOrderReviewResultGatherer(object):
                 tradeBeginDatetime -= timedelta(hours=4)
             else:
                 tradeBeginDatetime -= timedelta(hours=4+24)
-            
+        
         if time(11) < datetime.now().time() < time(15):
             tradeEndDatetime = datetime.combine(datetime.now().date(),time(11, 30))
         elif time(15) < datetime.now().time() < time(23):
             tradeEndDatetime = datetime.combine(datetime.now().date(),time(15))
+            
+            # tradeBeginDatetime will be set to 1600 today 
+            # when we sometimes need to re-run this result gatherer
+            # move it back to last night
+            if tradeBeginDatetime == datetime.combine(datetime.today().date(), time(16)):
+                if 0 == datetime.today().weekday():
+                    tradeBeginDatetime -= timedelta(days=3)
+                elif 6 == datetime.today().weekday():
+                    tradeBeginDatetime -= timedelta(days=2)
+                else:
+                    tradeBeginDatetime -= timedelta(days=1)                    
         else:
             # ??????????????????????????????????????????
             # ??????????????????????????????????????????
@@ -247,8 +259,8 @@ if __name__ == "__main__":
                                "paperTrading", "csrProbot_rb"),
         "bu2012": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
                               "paperTrading", "csrProbot_bu"),
-        "m2101": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
-                              "paperTrading", "csrProbot_m"),
+        "m2105": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
+                              "paperTrading", "csrProbot_m_toRollin"),
         "p2101": os.path.join("C:", os.sep, "vnpy-1.9.2", "examples", "ctaTrading",
                               "paperTrading", "csrProbot_p")
     }
