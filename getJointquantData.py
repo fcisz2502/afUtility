@@ -42,21 +42,18 @@ def getJQStockDataForBacktesting(stocks, dataSavingPath_, fre='60m'):
         print("Getting %s's data from JQ has done." % stock)
 
 # -----------------------------------------------------------------------------
-def getJQStockDataForTrading(stocks, dataSavingPath_, fre='60m'):
-    if not os.path.exists(dataSavingPath_):
-        os.makedirs(dataSavingPath_)
+def getJQStockDataForTrading(stocks, folderPath, fre='60m'):
+    if not os.path.exists(folderPath):
+        os.makedirs(folderPath)
 
     todayTime0 = datetime.combine(datetime.today().date(), time(0))  # .strftime("%Y-%m-%d %H:%M:%S")
 
-    if not os.path.exists(dataSavingPath_):
-        os.makedirs(dataSavingPath_)
-
     for stock in stocks:
+        filePath = os.path.join(folderPath, stock+"_trading_bars.csv")
         print('getting to %s.' % stock)
-        if os.path.exists(os.path.join(dataSavingPath_, stock + ".csv")):
+        if os.path.exists(filePath):
             start_date = datetime.today() - timedelta(days=10)
-            previous_data = pd.read_csv(os.path.join(dataSavingPath_, stock + ".csv"),
-                                        parse_dates=['datetime'], index_col='datetime')
+            previous_data = pd.read_csv(filePath, parse_dates=['datetime'], index_col='datetime')
         else:
             start_date = datetime.today() - timedelta(days=365)
             previous_data = None
@@ -71,9 +68,9 @@ def getJQStockDataForTrading(stocks, dataSavingPath_, fre='60m'):
             full_bars.drop_duplicates(keep='first', inplace=True)
         else:
             full_bars = jqdata
-        full_bars.to_csv(os.path.join(dataSavingPath_, stock + "_trading_bars.csv"))
+        full_bars.to_csv(filePath)
 
-    print("Getting jq data done. Data has been saved to: \n%s." %dataSavingPath_)
+    print("Getting jq data done. Data has been saved to: \n%s." %folderPath)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -196,13 +193,13 @@ if __name__ == "__main__":
     # stocks = ['002475', '000333', '000661', '000858', '600036',
     #           '600276', '600309', '603288', '601318']
     stocks = ['600585']
-    # stock_data_path = os.path.join('c:', os.sep, 'jqData',  'jqData')
-    # getJQStockDataForBacktesting(stocks, stock_data_path)
+    # folder_path = os.path.join('c:', os.sep, 'jqData',  'jqData')
+    # getJQStockDataForBacktesting(stocks, folder_path)
 
-    # stock_data_path = os.path.join('c:', os.sep, 'jqData', 'jqData')
-    stock_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
+    # folder_path = os.path.join('c:', os.sep, 'jqData', 'jqData')
+    folder_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
                                     "spike stocks", "stock data for order review")
-    getJQStockDataForTrading(stocks, stock_data_path)
+    getJQStockDataForTrading(stocks, folder_path)
 
     # -------------------------------------------------------------------------
     # get future data
