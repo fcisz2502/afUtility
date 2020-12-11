@@ -29,9 +29,16 @@ def getJQStockDataForBacktesting(stocks, dataSavingPath_, fre='60m'):
         jqdata.loc[:, 'time'] = jqdata.loc[:, 'datetime'].map(lambda x: x.time())
         jqdata.loc[jqdata['time'] < time(12), 'datetime'] -= timedelta(minutes=30)
         jqdata.drop(columns='time', inplace=True)
-        jqdata.to_csv(os.path.join(dataSavingPath_, 'applepy_'+stock+'_60m.csv'), index=0)
-        jqdata.loc[:, ["open", "high", "low", "close"]] *= 100
-        jqdata.to_csv(os.path.join(dataSavingPath_, 'mt4_'+stock+'_60m.csv'), index=0)
+        volume_scalar = 1000000
+        jqdata.loc[:, 'money'] = jqdata.loc[:, 'money'].map(lambda x: int(x/volume_scalar))
+        print("%s's money has been divided by %s and changed to integer for both applepy and MT4." % (stock, volume_scalar))
+        jqdata.to_csv(os.path.join(dataSavingPath_, stock+'_60m_for_applepy.csv'), index=0)
+        ohlc_scalar = 100
+        jqdata.loc[:, ["open", "high", "low", "close"]] *= ohlc_scalar
+        print("%s's ohlc has been amplified by %s for just MT4." %(stock, ohlc_scalar))
+        # jqdata.loc[:, 'money'] /= 1000000
+        jqdata.loc[:, 'money'] = jqdata.loc[:, 'money'].map(lambda x: int(x))
+        jqdata.to_csv(os.path.join(dataSavingPath_, stock+'_60m_for_MT4.csv'), index=0)
         print("Getting %s's data from JQ has done." % stock)
 
 # -----------------------------------------------------------------------------
@@ -64,64 +71,9 @@ def getJQStockDataForTrading(stocks, dataSavingPath_, fre='60m'):
             full_bars.drop_duplicates(keep='first', inplace=True)
         else:
             full_bars = jqdata
-        full_bars.to_csv(os.path.join(dataSavingPath_, stock + ".csv"))
+        full_bars.to_csv(os.path.join(dataSavingPath_, stock + "_trading_bars.csv"))
 
     print("Getting jq data done. Data has been saved to: \n%s." %dataSavingPath_)
-
-
-# -----------------------------------------------------------------------------
-# def getJointquantData(stocks, dataSavingPath_, fre='60m'):
-#     # stocks = ['002475', '000333', '000661', '000858', '600036', '600276', '600309', '600585', '603288', '601318', '600009']
-#     start_date = '2014-01-01'
-#     tomorrow = (datetime.combine(datetime.today().date(), time(0))+timedelta(days=1)).strftime("%Y-%m-%d")
-#     # todayTime0 = datetime.combine(datetime.today().date(), time(0)).strftime("%Y-%m-%d %H:%M:%S")
-#
-#     if not os.path.exists(dataSavingPath_):
-#         os.makedirs(dataSavingPath_)
-#
-#     for stock in stocks:
-#         print('getting to %s.' % stock)
-#         security = jq.normalize_code(stock)
-#         # df = get_bars(security, 100, unit='1m', fields=['date', 'open', 'high', 'low', 'close'],
-#         #               include_now=False, end_dt=None, fq_ref_date=None)
-#         jqdata = jq.get_price(security, start_date, tomorrow, frequency=fre, skip_paused=True, fq='pre')
-#         jqdata = jqdata.loc[:, ['open', 'high', 'low', 'close', 'money', 'volume']]
-#         jqdata.loc[:, 'ft'] = 0
-#         jqdata = jqdata.loc[:, ['open', 'high', 'low', 'close', 'money', 'volume', 'ft']]
-#         jqdata.index.rename("datetime", inplace=True)
-
-        # previous_data = pd.read_csv(os.path.join(dataSavingPath_, stock + ".csv"),
-        #                           parse_dates=['datetime'],
-        #                           index_col='datetime')
-        # full_bars = pd.concat([previous_data.loc[:todayTime0], jqdata.loc[todayTime0:, :]])
-        # full_bars.drop_duplicates(keep='first', inplace=True)
-
-        # full_bars.to_csv(os.path.join(dataSavingPath_, stock + ".csv"))
-    #     jqdata.to_csv(os.path.join(dataSavingPath_, stock + ".csv"))
-    # print("Getting jq data done. Data has been saved to: \n%s." % dataSavingPath_)
-    
-# for stock in stocks:
-#     data['open'] = data['open'] * 1000
-#     data['high'] = data['high'] * 1000
-#     data['low'] = data['low'] * 1000
-#     data['close'] = data['close'] * 1000
-#     data['open'] = data['open'].apply(lambda x: round(x))
-#     data['high'] = data['high'].apply(lambda x: round(x))
-#     data['low'] = data['low'].apply(lambda x: round(x))
-#     data['close'] = data['close'].apply(lambda x: round(x))
-#     # data['date'] = data['date'].apply(lambda x: x.split("'")[1])
-#     # data['time'] = data['time'].apply(lambda x: x.split("'")[1])
-#     data['open'] = data['open'].apply(lambda x: int(x))
-#     data['high'] = data['high'].apply(lambda x: int(x))
-#     data['low'] = data['low'].apply(lambda x: int(x))
-#     data['close'] = data['close'].apply(lambda x: int(x))
-#     data['time'] = data['time'].apply(lambda x: str(x))
-#     data['time'] = pd.to_timedelta(data['time']) - Minute(1)
-#     data.loc[data['time'] < "12:00:00", 'time'] = data.loc[data['time'] < "12:00:00", 'time'] - Minute(30)
-#     data['time'] = data['time'].apply(lambda x: str(x).split(" ")[2])
-#     data['time'] = data['time'].apply(lambda x: x.split(":")[0] + ":" + x.split(":")[1])
-#     # data['date'] = data['date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-#     data.to_csv(os.path.join(stocks_path, "mt4_" + stock + ".csv", index=0))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -242,14 +194,19 @@ def updateFutureDataWithJointquant(futures_, dataSavingPath_):
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     # stocks = ['002475', '000333', '000661', '000858', '600036',
-    #           '600276', '600309', '600585', '603288', '601318', '600009']
-    # stocks = ['002572']
+    #           '600276', '600309', '603288', '601318']
+    stocks = ['600585']
     # stock_data_path = os.path.join('c:', os.sep, 'jqData',  'jqData')
     # getJQStockDataForBacktesting(stocks, stock_data_path)
 
+    # stock_data_path = os.path.join('c:', os.sep, 'jqData', 'jqData')
+    stock_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
+                                    "spike stocks", "stock data for order review")
+    getJQStockDataForTrading(stocks, stock_data_path)
+
     # -------------------------------------------------------------------------
     # get future data
-    future_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud",
-                               "dataProcess", "future_daily_data")
-    futures= ['m2105', 'bu2106']
-    updateFutureDataWithJointquant(futures, future_data_path)
+    # future_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud",
+    #                            "dataProcess", "future_daily_data")
+    # futures= ['rb2105']
+    # updateFutureDataWithJointquant(futures, future_data_path)
