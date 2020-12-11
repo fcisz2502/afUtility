@@ -1,8 +1,8 @@
 import pandas as pd
 import os
 from datetime import datetime, time, timedelta
-import jqdatasdk as jq
-from afUtility.keyInfo import jqAccount, jqPassword
+#import jqdatasdk as jq
+#from afUtility.keyInfo import jqAccount, jqPassword
 from afUtility.mailing import Email, cwhEmail
 
 
@@ -188,10 +188,10 @@ def updateFutureDataWithJointquant(futures_, dataSavingPath_):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-class checkJointquantData(object):
+class LocalDataReplacement(object):
     def __init__(self, stock, local_folder_path):
         self._stock = stock
-
+        
         self._local_folder_path = local_folder_path
         self._local_bar_path = os.path.join(self._local_folder_path, stock+"_trading_bars.csv")
         self._local_bar_path_backup = os.path.join(self._local_folder_path, stock+"_trading_bars_backup.csv")
@@ -202,139 +202,144 @@ class checkJointquantData(object):
 
         self._jointquant_bars = None
         self._local_bars = None
+        self._get_jointquant_bars()
+        self._get_local_bars()
+        
+        self.todayStr = datetime.combine(datetime.today(), time(0)).strftime("%Y-%m-%d %H:%M:%S")
+        
+    # --------------------------------------------------------------------------------------------------------------
+    def _get_local_bars(self):
+        self._local_bars = pd.read_csv(self._local_bar_path, parse_dates=['datetime'], index_col='datetime')
 
-        self.todayStr = datetime.today().strftime("%Y-%m-%d")
+    # --------------------------------------------------------------------------------------------------------------
+    def _get_jointquant_bars(self):
+        self._jointquant_bars = pd.read_csv(self._jointquant_bar_path,
+                                            parse_dates=['datetime'], index_col='datetime')
 
-        # --------------------------------------------------------------------------------------------------------------
-        def _get_local_bars(self):
-            self._local_bars = pd.read_csv(self._local_bar_path, parse_dates=['datetime'], index_col='datetime')
+    # --------------------------------------------------------------------------------------------------------------
+    def check_jq_data(self):
+        # check number of bars
+        # check bars end times
+        check_pass = True
 
-        # --------------------------------------------------------------------------------------------------------------
-        def _get_jointquant_bars(self):
-            self._jointquant_bars = pd.read_csv(self._jointquant_bar_path,
-                                                parse_dates=['datetime'], index_col='datetime')
+        todaysBars = self._jointquant_bars.loc[datetime.today().strftime("%Y-%m-%d"):, :]
+        numberOfTodaysBars = len(todaysBars)
+        listOftodaysBarsDatetime = todaysBars.index.to_list()
 
-        # --------------------------------------------------------------------------------------------------------------
-        def check_jq_data(self):
-            check_pass = True
+        if time(11, 30) < datetime.now().time() < time(13):
+            if 2 != numberOfTodaysBars:
+                check_pass = False
+            if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
+                    listOftodaysBarsDatetime[1].time() != time(11, 30):
+                check_pass = False
 
-            todaysBars = self._jointquant_bars.loc[datetime.today().strftime("%Y-%m-%d"):, :]
-            numberOfTodaysBars = len(todaysBars)
-            listOftodaysBarsDatetime = todaysBars.index.to_list()
-
-            if time(11, 30) < datetime.now().time() < time(13):
-                if 2 != numberOfTodaysBars:
-                    check_pass = False
-                if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
-                        listOftodaysBarsDatetime[1].time() != time(11, 30):
-                    check_pass = False
-
-            elif time(15) < datetime.now().time():
-                if 4 != numberOfTodaysBars:
-                    check_pass = False
-                if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
-                        listOftodaysBarsDatetime[1].time() != time(11, 30) or \
-                        listOftodaysBarsDatetime[2].time() != time(14) or \
-                        listOftodaysBarsDatetime[3].time() != time(15):
-                    check_pass = False
-            elif datetime.now() < time(9, 25):  # trading not yet started, no data
-                pass
-            else:  # during trading, 9:25-11:30 and 13:00-15:00, close price not know yet
-                pass
-
-            return check_pass
-
-        # --------------------------------------------------------------------------------------------------------------
-        def _compare_two_sources(self, threshold=0.0025):
-            compare_pass = True
-
-            self._get_jointquant_bars()
-            self._get_local_bars()
-
-            if self.check_jq_data():
-                todayStr = datetime.today().strftime("%Y-%m-%d")
-
-                df_local = self._local_bars.loc[todayStr:, :].copy()
-                df_jq = self._jointquant_bars.loc[todayStr:, :].copy()
-
-                df_jq.loc[:, 'on'] = range(0, len(df_jq))
-                df_local.loc[:, 'on'] = range(0, len(df_local))
-
-                df_both = pd.merge(df_jq, df_spike2, on='on')
-
-                df_both.loc[:, 'o_diff'] = df_both.loc[:, 'open_x'] - df_both.loc[:, 'open_y']
-                df_both.loc[:, 'h_diff'] = df_both.loc[:, 'high_x'] - df_both.loc[:, 'high_y']
-                df_both.loc[:, 'l_diff'] = df_both.loc[:, 'low_x'] - df_both.loc[:, 'low_y']
-                df_both.loc[:, 'c_diff'] = df_both.loc[:, 'close_x'] - df_both.loc[:, 'close_y']
-                # df_both.loc[:, 'o_min'] = min(df_jq.loc[:, 'open'], df_spike2.loc[:, 'open'])
-                for i in range(len(df_both)):
-                    df_both.loc[i, 'o_min'] = min(df_both.loc[i, 'open_x'], df_both.loc[i, 'open_y'])
-                    df_both.loc[i, 'h_min'] = min(df_both.loc[i, 'high_x'], df_both.loc[i, 'high_y'])
-                    df_both.loc[i, 'l_min'] = min(df_both.loc[i, 'low_x'], df_both.loc[i, 'low_y'])
-                    df_both.loc[i, 'c_min'] = min(df_both.loc[i, 'close_x'], df_both.loc[i, 'close_y'])
-
-                df_both.loc[:, 'o_diff%'] = abs(df_both.loc[:, 'o_diff'] / df_both.loc[:, 'o_min'])
-                df_both.loc[:, 'h_diff%'] = abs(df_both.loc[:, 'h_diff'] / df_both.loc[:, 'h_min'])
-                df_both.loc[:, 'l_diff%'] = abs(df_both.loc[:, 'l_diff'] / df_both.loc[:, 'l_min'])
-                df_both.loc[:, 'c_diff%'] = abs(df_both.loc[:, 'c_diff'] / df_both.loc[:, 'c_min'])
-
-                # threshold = 0.0025
-                df_both.loc[:, 'o_diff%>threshold'] = df_both.loc[:, 'o_diff%'] > threshold
-                df_both.loc[:, 'h_diff%>threshold'] = df_both.loc[:, 'h_diff%'] > threshold
-                df_both.loc[:, 'l_diff%>threshold'] = df_both.loc[:, 'l_diff%'] > threshold
-                df_both.loc[:, 'c_diff%>threshold'] = df_both.loc[:, 'c_diff%'] > threshold
-
-                if df_both.loc[:, 'o_diff%>threshold':'c_diff%>threshold'].sum().sum():
-                    compare_pass = False
-            else:
-                compare_pass = False
-
-            return compare_pass
-
-        # --------------------------------------------------------------------------------------------------------------
-        def chek_local_bars_end_time(self):
+        elif time(15) < datetime.now().time():
+            if 4 != numberOfTodaysBars:
+                check_pass = False
+            if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
+                    listOftodaysBarsDatetime[1].time() != time(11, 30) or \
+                    listOftodaysBarsDatetime[2].time() != time(14) or \
+                    listOftodaysBarsDatetime[3].time() != time(15):
+                check_pass = False
+        elif datetime.now() < time(9, 25):  # trading not yet started, no data
+            pass
+        else:  # during trading, 9:25-11:30 and 13:00-15:00, close price not know yet
             pass
 
-        # --------------------------------------------------------------------------------------------------------------
-        def _backup_local_bars(self):
-            if os.exists(self._local_bar_path_backup):
-                bars_backup = pd.read_csv(self._local_bar_path_backup, parse_dates=['datetime'], index_col='datetime')
-                last_backup_datetime = bars_backup.tail(1).index.to_list()[0]+timedelta(hours=1)
-                df = pd.concat([bars_backup,
-                                self._local_bars.loc[last_backup_datetime.strftime("%Y-%m-%d %H:%M:%S"):, :]
-                                ])
-                df.to_csv(self._local_bar_path_backup)
-            else:
-                self._local_bars.to_csv(self._local_bar_path_backup)
+        return check_pass
 
-        # --------------------------------------------------------------------------------------------------------------
-        def replaceLocalBarsWithJointquantData(self):
-            replacement_successed = True
+    # --------------------------------------------------------------------------------------------------------------
+    def _compare_two_sources(self, threshold=0.0025):
+        # compare ohlc difference
+        compare_pass = True
+
+        df_local = self._local_bars.loc[self.todayStr:, :].copy()
+        df_jq = self._jointquant_bars.loc[self.todayStr:, :].copy()
+
+        df_jq.loc[:, 'on'] = range(0, len(df_jq))
+        df_local.loc[:, 'on'] = range(0, len(df_local))
+
+        df_both = pd.merge(df_jq, df_local, on='on')
+
+        df_both.loc[:, 'o_diff'] = df_both.loc[:, 'open_x'] - df_both.loc[:, 'open_y']
+        df_both.loc[:, 'h_diff'] = df_both.loc[:, 'high_x'] - df_both.loc[:, 'high_y']
+        df_both.loc[:, 'l_diff'] = df_both.loc[:, 'low_x'] - df_both.loc[:, 'low_y']
+        df_both.loc[:, 'c_diff'] = df_both.loc[:, 'close_x'] - df_both.loc[:, 'close_y']
+        # df_both.loc[:, 'o_min'] = min(df_jq.loc[:, 'open'], df_spike2.loc[:, 'open'])
+        for i in range(len(df_both)):
+            df_both.loc[i, 'o_min'] = min(df_both.loc[i, 'open_x'], df_both.loc[i, 'open_y'])
+            df_both.loc[i, 'h_min'] = min(df_both.loc[i, 'high_x'], df_both.loc[i, 'high_y'])
+            df_both.loc[i, 'l_min'] = min(df_both.loc[i, 'low_x'], df_both.loc[i, 'low_y'])
+            df_both.loc[i, 'c_min'] = min(df_both.loc[i, 'close_x'], df_both.loc[i, 'close_y'])
+
+        df_both.loc[:, 'o_diff%'] = abs(df_both.loc[:, 'o_diff'] / df_both.loc[:, 'o_min'])
+        df_both.loc[:, 'h_diff%'] = abs(df_both.loc[:, 'h_diff'] / df_both.loc[:, 'h_min'])
+        df_both.loc[:, 'l_diff%'] = abs(df_both.loc[:, 'l_diff'] / df_both.loc[:, 'l_min'])
+        df_both.loc[:, 'c_diff%'] = abs(df_both.loc[:, 'c_diff'] / df_both.loc[:, 'c_min'])
+
+        # threshold = 0.0025
+        df_both.loc[:, 'o_diff%>threshold'] = df_both.loc[:, 'o_diff%'] > threshold
+        df_both.loc[:, 'h_diff%>threshold'] = df_both.loc[:, 'h_diff%'] > threshold
+        df_both.loc[:, 'l_diff%>threshold'] = df_both.loc[:, 'l_diff%'] > threshold
+        df_both.loc[:, 'c_diff%>threshold'] = df_both.loc[:, 'c_diff%'] > threshold
+
+        if df_both.loc[:, 'o_diff%>threshold':'c_diff%>threshold'].sum().sum():
+            compare_pass = False
+
+        return compare_pass
+
+    # --------------------------------------------------------------------------------------------------------------
+    def chek_local_bars_end_time(self):
+        pass
+
+    # --------------------------------------------------------------------------------------------------------------
+    def _backup_local_bars(self):
+        if os.path.exists(self._local_bar_path_backup):
+            bars_backup = pd.read_csv(self._local_bar_path_backup, parse_dates=['datetime'], index_col='datetime')
+            last_backup_datetime = bars_backup.tail(1).index.to_list()[0]+timedelta(hours=1)
+            df = pd.concat([bars_backup,
+                            self._local_bars.loc[last_backup_datetime.strftime("%Y-%m-%d %H:%M:%S"):, :]
+                            ])
+            df.to_csv(self._local_bar_path_backup)
+        else:
+            self._local_bars.to_csv(self._local_bar_path_backup)
+    
+    # --------------------------------------------------------------------------------------------------------------
+    def _replaceLocalBarsWithJointquantData(self):
+        new_bars = pd.concat([
+                self._local_bars.loc[:self.todayStr, :], 
+                self._jointquant_bars.loc[self.todayStr:, :]])
+        
+        new_bars = new_bars.drop_duplicates()
+        new_bars.to_csv(self._local_bar_path)
+
+    # --------------------------------------------------------------------------------------------------------------
+    def run_replacement(self):
+        replacement_successed = True
+        
+        if self.check_jq_data():
             if self._compare_two_sources():
                 self._backup_local_bars()
-                self._repalce()
+                self._replaceLocalBarsWithJointquantData()
             else:
                 replacement_successed = False
-            return replacement_successed
+        else:
+            replacement_successed = False
+        return replacement_successed
 
-        # --------------------------------------------------------------------------------------------------------------
-        def _replace(self):
-            pd.concat([self._local_bars.loc[:todayStr, :], self._jointquant_bars.loc[todayStr:, :]]).to_csv(
-                self._local_bar_path
-            )
 
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     # stocks = ['002475', '000333', '000661', '000858', '600036',
     #           '600276', '600309', '603288', '601318']
-    stocks = ['600585']
+#    stocks = ['600585']
     # folder_path = os.path.join('c:', os.sep, 'jqData',  'jqData')
     # getJQStockDataForBacktesting(stocks, folder_path)
 
     # folder_path = os.path.join('c:', os.sep, 'jqData', 'jqData')
-    folder_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
-                                    "spike stocks", "stock data for order review")
-    getJQStockDataForTrading(stocks, folder_path)
+#    folder_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
+#                                    "spike stocks", "stock data for order review")
+#    getJQStockDataForTrading(stocks, folder_path)
 
     # -------------------------------------------------------------------------
     # get future data
@@ -342,3 +347,28 @@ if __name__ == "__main__":
     #                            "dataProcess", "future_daily_data")
     # futures= ['rb2105']
     # updateFutureDataWithJointquant(futures, future_data_path)
+    
+    folder_path = os.path.join('C', os.sep, 'quant',
+                               'spike5.0', 'realtrading', 
+                               'realTradingData')
+    stocks = ['600031', '002475',
+              '000858', '600009', 
+              '600276', '000661',
+              '600309', '603288', 
+              '000333', '600036', 
+              '601318']
+    stocks = ['000333']
+    stocks_ = stocks[:]
+#    stocks = ['000858']
+    for stock in stocks:
+        local_folder_path = os.path.join(folder_path, stock)
+        ldr = LocalDataReplacement(stock, local_folder_path)
+    #    ldr.check_jq_data()
+        res = ldr.run_replacement()
+        if res:
+            stocks_.remove(stock)
+    if stocks_:
+        email = Email()
+        email.send('Spike replace local bars with jq data has failed', 
+                   str(stocks_))
+
