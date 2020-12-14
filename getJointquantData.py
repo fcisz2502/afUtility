@@ -190,6 +190,7 @@ def updateFutureDataWithJointquant(futures_, dataSavingPath_):
 # ----------------------------------------------------------------------------------------------------------------------
 class LocalDataReplacement(object):
     def __init__(self, stock, local_folder_path):
+        print('get to %s.' %stock)
         self._stock = stock
         
         self._local_folder_path = local_folder_path
@@ -209,7 +210,7 @@ class LocalDataReplacement(object):
 
     # --------------------------------------------------------------------------------------------------------------
     def _get_jointquant_bars(self):
-    	path = os.path.join(os.sep * 2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
+        path = os.path.join(os.sep * 2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
     		"spike stocks", "stock data for order review", self._stock+"_trading_bars.csv")
         self._jointquant_bars = pd.read_csv(path, parse_dates=['datetime'], index_col='datetime')
 
