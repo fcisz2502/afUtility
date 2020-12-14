@@ -196,10 +196,6 @@ class LocalDataReplacement(object):
         self._local_bar_path = os.path.join(self._local_folder_path, stock+"_trading_bars.csv")
         self._local_bar_path_backup = os.path.join(self._local_folder_path, stock+"_trading_bars_backup.csv")
 
-        self._jointquant_bar_path = os.path.join(
-            os.sep * 2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
-            "spike stocks", "stock data for order review", stock+"_trading_bars.csv")
-
         self._jointquant_bars = None
         self._local_bars = None
         self._get_jointquant_bars()
@@ -213,8 +209,9 @@ class LocalDataReplacement(object):
 
     # --------------------------------------------------------------------------------------------------------------
     def _get_jointquant_bars(self):
-        self._jointquant_bars = pd.read_csv(self._jointquant_bar_path,
-                                            parse_dates=['datetime'], index_col='datetime')
+    	path = os.path.join(os.sep * 2, "FCIDEBIAN", "FCI_Cloud", "dataProcess",
+    		"spike stocks", "stock data for order review", self._stock+"_trading_bars.csv")
+        self._jointquant_bars = pd.read_csv(path, parse_dates=['datetime'], index_col='datetime')
 
     # --------------------------------------------------------------------------------------------------------------
     def check_jq_data(self):
