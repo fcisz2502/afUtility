@@ -1,8 +1,8 @@
 import pandas as pd
 import os
 from datetime import datetime, time, timedelta
-#import jqdatasdk as jq
-#from afUtility.keyInfo import jqAccount, jqPassword
+import jqdatasdk as jq
+from afUtility.keyInfo import jqAccount, jqPassword
 from afUtility.mailing import Email, cwhEmail
 
 
@@ -228,18 +228,22 @@ class LocalDataReplacement(object):
 
         if time(11, 30) < datetime.now().time() < time(13):
             if 2 != numberOfTodaysBars:
+                print("%s number of bars in the monring section is not 2." %self._stock)
                 check_pass = False
             if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
                     listOftodaysBarsDatetime[1].time() != time(11, 30):
+                print('%s bars not end at 10:30 or 11:30.' %self._stock)
                 check_pass = False
 
         elif time(15) < datetime.now().time():
             if 4 != numberOfTodaysBars:
+                print("%s number of today's bars is not 4." % self._stock)
                 check_pass = False
             if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
                     listOftodaysBarsDatetime[1].time() != time(11, 30) or \
                     listOftodaysBarsDatetime[2].time() != time(14) or \
                     listOftodaysBarsDatetime[3].time() != time(15):
+                print('%s bars not end at 10:30 or 11:30 or 14:00 or 15:00.' % self._stock)
                 check_pass = False
         elif datetime.now() < time(9, 25):  # trading not yet started, no data
             pass
@@ -284,6 +288,8 @@ class LocalDataReplacement(object):
         df_both.loc[:, 'c_diff%>threshold'] = df_both.loc[:, 'c_diff%'] > threshold
 
         if df_both.loc[:, 'o_diff%>threshold':'c_diff%>threshold'].sum().sum():
+            print('%s has significant differences between trading bars and jq bars.')
+            print(df_both.loc[:, 'o_diff%>threshold':'c_diff%>threshold'])
             compare_pass = False
 
         return compare_pass
@@ -355,11 +361,10 @@ if __name__ == "__main__":
               '000858', '600009', 
               '600276', '000661',
               '600309', '603288', 
-              '000333', '600036', 
+              '000333', '600036',
               '601318']
-    stocks = ['000333']
+    stocks = ['603288']
     stocks_ = stocks[:]
-#    stocks = ['000858']
     for stock in stocks:
         local_folder_path = os.path.join(folder_path, stock)
         ldr = LocalDataReplacement(stock, local_folder_path)
@@ -371,4 +376,6 @@ if __name__ == "__main__":
         email = Email()
         email.send('Spike replace local bars with jq data has failed', 
                    str(stocks_))
+    else:
+        print('\nspike5 trading bars replacement succeed')
 
