@@ -344,6 +344,29 @@ class LocalDataReplacement(object):
 
 
 # -----------------------------------------------------------------------------
+def replace_spike5_trading_bars(stocks):
+    # __for spike 5
+    folder_path = os.path.join('C', os.sep, 'quant',
+                               'spike5.0', 'realtrading',
+                               'realTradingData')
+    # stocks = ['002475', '600585']
+    stocks_ = stocks[:]
+    for stock in stocks:
+        local_folder_path = os.path.join(folder_path, stock)
+        ldr = LocalDataReplacement(stock, local_folder_path)
+        #    ldr.check_jq_data()
+        res = ldr.run_replacement()
+        if res:
+            stocks_.remove(stock)
+    if stocks_:
+        email = Email()
+        email.send('Spike5 replace local bars with jq data has failed',
+                   str(stocks_))
+    else:
+        print('\nspike5 trading bars replacement succeed')
+
+        
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     # stocks = ['002475', '000333', '000661', '000858', '600036',
     #           '600276', '600309', '603288', '601318']
