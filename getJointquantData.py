@@ -1,13 +1,13 @@
 import pandas as pd
 import os
 from datetime import datetime, time, timedelta
-import jqdatasdk as jq
 from afUtility.keyInfo import jqAccount, jqPassword
 from afUtility.mailing import Email, cwhEmail
 
 
 # -----------------------------------------------------------------------------
 def getStockDataFromJQ(stock, start_date, fre):
+    import jqdatasdk as jq
     jq.auth(jqAccount, jqPassword)
     tomorrow = (datetime.combine(datetime.today().date(), time(0)) + timedelta(days=1)).strftime("%Y-%m-%d")
     security = jq.normalize_code(stock)
@@ -192,7 +192,8 @@ class LocalDataReplacement(object):
     def __init__(self, stock, local_folder_path):
         print('get to %s.' %stock)
         self._stock = stock
-        
+        self._threshold = 0.0025
+
         self._local_folder_path = local_folder_path
         self._local_bar_path = os.path.join(self._local_folder_path, stock+"_trading_bars.csv")
         self._local_bar_path_backup = os.path.join(self._local_folder_path, stock+"_trading_bars_backup.csv")
@@ -203,7 +204,12 @@ class LocalDataReplacement(object):
         self._get_local_bars()
         
         self.todayStr = datetime.combine(datetime.today(), time(0)).strftime("%Y-%m-%d %H:%M:%S")
-        
+
+    # --------------------------------------------------------------------------------------------------------------
+    def set_threshold(self, x):
+        # better have code to evalue x
+        self._threshold = x
+
     # --------------------------------------------------------------------------------------------------------------
     def _get_local_bars(self):
         self._local_bars = pd.read_csv(self._local_bar_path, parse_dates=['datetime'], index_col='datetime')
@@ -251,7 +257,7 @@ class LocalDataReplacement(object):
         return check_pass
 
     # --------------------------------------------------------------------------------------------------------------
-    def _compare_two_sources(self, threshold=0.0025):
+    def _compare_two_sources(self):
         # compare ohlc difference
         compare_pass = True
 
@@ -280,13 +286,18 @@ class LocalDataReplacement(object):
         df_both.loc[:, 'c_diff%'] = abs(df_both.loc[:, 'c_diff'] / df_both.loc[:, 'c_min'])
 
         # threshold = 0.0025
-        df_both.loc[:, 'o_diff%>threshold'] = df_both.loc[:, 'o_diff%'] > threshold
-        df_both.loc[:, 'h_diff%>threshold'] = df_both.loc[:, 'h_diff%'] > threshold
-        df_both.loc[:, 'l_diff%>threshold'] = df_both.loc[:, 'l_diff%'] > threshold
-        df_both.loc[:, 'c_diff%>threshold'] = df_both.loc[:, 'c_diff%'] > threshold
+        df_both.loc[:, 'o_diff%>threshold'] = df_both.loc[:, 'o_diff%'] > self._threshold
+        df_both.loc[:, 'h_diff%>threshold'] = df_both.loc[:, 'h_diff%'] > self._threshold
+        df_both.loc[:, 'l_diff%>threshold'] = df_both.loc[:, 'l_diff%'] > self._threshold
+        df_both.loc[:, 'c_diff%>threshold'] = df_both.loc[:, 'c_diff%'] > self._threshold
 
         if df_both.loc[:, 'o_diff%>threshold':'c_diff%>threshold'].sum().sum():
             print('%s has significant differences between trading bars and jq bars.')
+            print(df_both.loc[:, 'open_x':'close_x'])
+            print(df_both.loc[:, 'open_y':'close_y'])
+            print(df_both.loc[:, 'o_diff':'c_diff'])
+            print(df_both.loc[:, 'o_min':'c_min'])
+            print(df_both.loc[:, 'o_diff%':'c_diff%'])
             print(df_both.loc[:, 'o_diff%>threshold':'c_diff%>threshold'])
             compare_pass = False
 
