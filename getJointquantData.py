@@ -92,6 +92,9 @@ def get_symbol(instrument):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def getFutureDataFromJQ(instrument_with_suffix_, start_date):
+    import jqdatasdk as jq
+    jq.auth(jqAccount, jqPassword)
+    
     jqdata = jq.get_price(instrument_with_suffix_,
                           start_date=start_date,
                           end_date=(datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d'),
@@ -234,21 +237,23 @@ class LocalDataReplacement(object):
             if 2 != numberOfTodaysBars:
                 print("%s number of bars in the monring section is not 2." %self._stock)
                 check_pass = False
-            if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
+            else:
+                if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
                     listOftodaysBarsDatetime[1].time() != time(11, 30):
-                print('%s bars not end at 10:30 or 11:30.' %self._stock)
-                check_pass = False
+                    print('%s bars not end at 10:30 or 11:30.' %self._stock)
+                    check_pass = False
 
         elif time(15) < datetime.now().time():
             if 4 != numberOfTodaysBars:
                 print("%s number of today's bars is not 4." % self._stock)
                 check_pass = False
-            if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
-                    listOftodaysBarsDatetime[1].time() != time(11, 30) or \
-                    listOftodaysBarsDatetime[2].time() != time(14) or \
-                    listOftodaysBarsDatetime[3].time() != time(15):
-                print('%s bars not end at 10:30 or 11:30 or 14:00 or 15:00.' % self._stock)
-                check_pass = False
+            else:
+                if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
+                        listOftodaysBarsDatetime[1].time() != time(11, 30) or \
+                        listOftodaysBarsDatetime[2].time() != time(14) or \
+                        listOftodaysBarsDatetime[3].time() != time(15):
+                    print('%s bars not end at 10:30 or 11:30 or 14:00 or 15:00.' % self._stock)
+                    check_pass = False
         elif datetime.now() < time(9, 25):  # trading not yet started, no data
             pass
         else:  # during trading, 9:25-11:30 and 13:00-15:00, close price not know yet
