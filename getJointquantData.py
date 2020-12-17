@@ -231,22 +231,26 @@ class LocalDataReplacement(object):
 
         todaysBars = self._jointquant_bars.loc[datetime.today().strftime("%Y-%m-%d"):, :]
         numberOfTodaysBars = len(todaysBars)
+
         listOftodaysBarsDatetime = todaysBars.index.to_list()
 
         if time(11, 30) < datetime.now().time() < time(13):
             if 2 != numberOfTodaysBars:
                 print("%s number of bars in the monring section is not 2." %self._stock)
                 check_pass = False
+                return check_pass
             else:
                 if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
                     listOftodaysBarsDatetime[1].time() != time(11, 30):
                     print('%s bars not end at 10:30 or 11:30.' %self._stock)
                     check_pass = False
+                    return check_pass
 
         elif time(15) < datetime.now().time():
             if 4 != numberOfTodaysBars:
                 print("%s number of today's bars is not 4." % self._stock)
                 check_pass = False
+                return check_pass
             else:
                 if listOftodaysBarsDatetime[0].time() != time(10, 30) or \
                         listOftodaysBarsDatetime[1].time() != time(11, 30) or \
@@ -254,6 +258,7 @@ class LocalDataReplacement(object):
                         listOftodaysBarsDatetime[3].time() != time(15):
                     print('%s bars not end at 10:30 or 11:30 or 14:00 or 15:00.' % self._stock)
                     check_pass = False
+                    return check_pass
         elif datetime.now() < time(9, 25):  # trading not yet started, no data
             pass
         else:  # during trading, 9:25-11:30 and 13:00-15:00, close price not know yet
