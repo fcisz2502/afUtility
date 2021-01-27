@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 import os
 from datetime import datetime, time, timedelta
@@ -202,6 +203,7 @@ class JointquantDataReplacement(object):
 
         self._trading_bars = None
         self._jointquant_data_origin = None
+        self._jq_bars_for_all_spike = None
         self._jq_bars_for_spike6 = None
         self._jq_bars_for_spike5 = None
         self._jq_bars_for_spike3 = None
@@ -290,9 +292,13 @@ class JointquantDataReplacement(object):
         # check bars end times
         check_pass = True
 
+        print('jq origin data:')
+        print(self._jointquant_data_origin.tail(10))
+
         todaysBars = self._jointquant_data_origin.loc[datetime.today().strftime("%Y-%m-%d"):, :]
         numberOfTodaysBars = len(todaysBars)
-
+        print('today bars is:')
+        print(todaysBars)
         listOftodaysBarsDatetime = todaysBars.index.to_list()
 
         if time(11, 30) < datetime.now().time() < time(13):
@@ -328,28 +334,36 @@ class JointquantDataReplacement(object):
         return check_pass
 
     # ------------------------------------------------------------------------------------------------------------------
-    def _save_jq_bars_for_spike3(self):
-        pass
+    def _produce_jq_bars_for_all_spike(self):
+        self._jq_bars_for_all_spike = self._jointquant_data_origin.copy()
+        self._jq_bars_for_all_spike.loc[:, 'datetime'] = self._jq_bars_for_all_spike.index
+        self._jq_bars_for_all_spike.reset_index(inplace=True, drop=True)
 
+        _len = len(self._jq_bars_for_all_spike)
+        if self._jq_bars_for_all_spike.loc[_len-1, 'datetime'].time() < time(12):
+            self._jq_bars_for_all_spike.loc[_len-1, 'amount'] += self._jq_bars_for_all_spike.loc[_len-2, 'amount']
+        else:
+            self._jq_bars_for_all_spike.loc[_len-1, 'amount'] += self._jq_bars_for_all_spike.loc[_len-4:_len-2, 'amount'].sum()
+
+        self._jq_bars_for_all_spike = self._jq_bars_for_all_spike.loc[:,
+                                   ['datetime', 'open', 'high', 'low', 'close', 'amount']]
+
+        self._jq_bars_for_all_spike.loc[:, 'ft'] = 0
+        self._jq_bars_for_all_spike.set_index('datetime', drop=True, inplace=True)
+
+    # ------------------------------------------------------------------------------------------------------------------
     def _save_jq_bars_for_spike5(self):
-        pass
+        self._jq_bars_for_spike5 = self._jq_bars_for_all_spike.copy()
+        # spike5 does not need amount
+        self._jq_bars_for_spike5 = self._jq_bars_for_spike5.loc[
+            :, ['open', 'high', 'low', 'close', 'ft']]
+        
+        self._jq_bars_for_spike5.to_csv(
+            os.path.join(self._jointquant_data_dir, 'for spike 5', self._stock+'_trading_bars.csv'))
 
     # ------------------------------------------------------------------------------------------------------------------
     def _save_jq_bars_for_spike6(self):
-        self._jq_bars_for_spike6 = self._jointquant_data_origin.copy()
-        self._jq_bars_for_spike6.loc[:, 'datetime'] = self._jq_bars_for_spike6.index
-        self._jq_bars_for_spike6.reset_index(inplace=True, drop=True)
-
-        _len = len(self._jq_bars_for_spike6)
-        if self._jq_bars_for_spike6.loc[_len-1, 'datetime'].time() < time(12):
-            self._jq_bars_for_spike6.loc[_len-1, 'amount'] += self._jq_bars_for_spike6.loc[_len-2, 'amount']
-        else:
-            self._jq_bars_for_spike6.loc[_len-1, 'amount'] += self._jq_bars_for_spike6.loc[_len-4:_len-2, 'amount'].sum()
-
-        self._jq_bars_for_spike6 = self._jq_bars_for_spike6.loc[:,
-                                   ['datetime', 'open', 'high', 'low', 'close', 'amount']]
-        self._jq_bars_for_spike6.loc[:, 'ft'] = 0
-        self._jq_bars_for_spike6.set_index('datetime', drop=True, inplace=True)
+        self._jq_bars_for_spike6 = self._jq_bars_for_all_spike.copy()
 
         self._jq_bars_for_spike6.to_csv(
             os.path.join(self._jointquant_data_dir, 'for spike 6', self._stock+'_trading_bars.csv'))
@@ -438,24 +452,52 @@ class JointquantDataReplacement(object):
         return compare_pass
 
     # ------------------------------------------------------------------------------------------------------------------
-    def set_spike6_trading_bars_dir(self):
-        self._spike6_trading_bars_dir = os.path.join(
-            'C', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData'
-        )
+    # def set_spike6_trading_bars_dir(self):
+    #     self._spike6_trading_bars_dir = os.path.join(
+    #         'C', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData'
+    #     )
 
     # ------------------------------------------------------------------------------------------------------------------
-    def _get_spike6_trading_bars(self):
-        self.set_spike6_trading_bars_dir()
-        file_path = os.path.join(self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars.csv')
+    def _set_trading_bars_dir(self, x:)
+        self._trading_bars_dir = x
+
+    # ------------------------------------------------------------------------------------------------------------------
+    def _get_trading_bars(self):
+        file_path = os.path.join(self._trading_bars_dir, self._stock, self._stock+'_trading_bars.csv')
         if os.path.exists(file_path):
             self._trading_bars = pd.read_csv(file_path, parse_dates=['datetime'], index_col='datetime')
         else:
             raise Exception('%s trading bars does not exist!' % self._stock)
 
     # ------------------------------------------------------------------------------------------------------------------
-    def _backup_spike6_trading_bars(self):
+    # def _get_spike6_trading_bars(self):
+    #     # self.set_spike6_trading_bars_dir()
+    #     file_path = os.path.join(self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars.csv')
+    #     if os.path.exists(file_path):
+    #         self._trading_bars = pd.read_csv(file_path, parse_dates=['datetime'], index_col='datetime')
+    #     else:
+    #         raise Exception('%s trading bars does not exist!' % self._stock)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # def _backup_spike6_trading_bars(self):
+    #     previous_bars_path = os.path.join(
+    #         self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars_backup.csv')
+    #     if os.path.exists(previous_bars_path):
+    #         previous_bars = pd.read_csv(previous_bars_path, parse_dates=['datetime'], index_col='datetime')
+    #         last_backup_dt = previous_bars.index.to_list()[-1]
+
+    #         dt = (last_backup_dt + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+    #         full = pd.concat([previous_bars, self._trading_bars.loc[dt:, :]])
+    #         full.drop_duplicates(keep='last', inplace=True)
+    #     else:
+    #         full = self._trading_bars
+
+    #     full.to_csv(previous_bars_path)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    def _backup_trading_bars(self):
         previous_bars_path = os.path.join(
-            self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars_backup.csv')
+            self._trading_bars_dir, self._stock, self._stock+'_trading_bars_backup.csv')
         if os.path.exists(previous_bars_path):
             previous_bars = pd.read_csv(previous_bars_path, parse_dates=['datetime'], index_col='datetime')
             last_backup_dt = previous_bars.index.to_list()[-1]
@@ -469,26 +511,104 @@ class JointquantDataReplacement(object):
         full.to_csv(previous_bars_path)
 
     # ------------------------------------------------------------------------------------------------------------------
-    def _replace_spike6_trading_bars(self):
-        self._backup_spike6_trading_bars()
-        self._jq_bars_for_spike6.to_csv(
-            os.path.join(self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars.csv')
-        )
+    # def _replace_spike6_trading_bars(self):
+    #     self._backup_spike6_trading_bars()
+    #     self._jq_bars_for_spike6.to_csv(
+    #         os.path.join(self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars.csv')
+    #     )
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # def _replace_spike6_trading_bars(self):
+    #     self._backup_spike6_trading_bars()
+    #     self._jq_bars_for_spike6.to_csv(
+    #         os.path.join(self._spike6_trading_bars_dir, self._stock, self._stock+'_trading_bars.csv')
+    #     )
+
+    
+    # ------------------------------------------------------------------------------------------------------------------
+    def _compare_local_to_jq(self):
+        res = False
+        self._update_jointquant_data()
+        if self._check_jointquant_data():
+            self._produce_jq_bars_for_all_spike()
+            if 'spike6' in self._trading_bars_dir:
+                self._save_jq_bars_for_spike6()
+            elif 'spike5' in self._trading_bars_dir:
+                self._save_jq_bars_for_spike5()
+            else:
+                raise Exception('dir does not include spike6 nor spike5.')
+            # spike6_trading_bars_dir = os.path.join(
+            #     'C', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData'
+            #     )
+            # self._get_spike6_trading_bars()
+            self._get_trading_bars()
+            if 'spike6' in self._trading_bars_dir:
+                if self._compare_amount() and self._compare_ohlc():
+                    res = True
+            else: 
+                if self._compare_ohlc():
+                    res = True
+        return res
+
+                # self._backup_trading_bars()
+                # self._jq_bars_for_spike6.to_csv(
+                #     os.path.join(
+                #         dir, self._stock, 
+                #         self._stock+'_trading_bars.csv')
+                #         )
 
     # ------------------------------------------------------------------------------------------------------------------
     def replace_spike6_trading_bars(self):
-        self._update_jointquant_data()
-        if self._check_jointquant_data():
-            self._save_jq_bars_for_spike6()
-            self._get_spike6_trading_bars()
-            if self._compare_amount() and self._compare_ohlc():
-                self._replace_spike6_trading_bars()
+        trading_bars_dir = os.path.join(
+                'C', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData'
+                )
+        self._set_trading_bars_dir(trading_bars_dir)
 
+        if self._compare_local_to_jq():
+            self._backup_trading_bars()
+            self._jq_bars_for_spike6.to_csv(
+                    os.path.join(
+                        trading_bars_dir, 
+                        self._stock, 
+                        self._stock+'_trading_bars.csv'
+                        )
+                    )
+
+
+        # self._update_jointquant_data()
+        # if self._check_jointquant_data():
+        #     self._save_jq_bars_for_spike6()
+        #     spike6_trading_bars_dir = os.path.join(
+        #         'C', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData'
+        #         )
+        #     self._set_trading_bars_dir(spike6_trading_bars_dir)
+        #     # self._get_spike6_trading_bars()
+        #     self._get_trading_bars()
+        #     if self._compare_amount() and self._compare_ohlc():
+        #         self._backup_trading_bars()
+        #         self._jq_bars_for_spike6.to_csv(
+        #             os.path.join(
+        #                 spike6_trading_bars_dir, 
+        #                 self._stock, 
+        #                 self._stock+'_trading_bars.csv')
+        #                 )
+
+    # ------------------------------------------------------------------------------------------------------------------
     def replace_spike5_trading_bars(self):
-        pass
+        trading_bars_dir = os.path.join(
+                'C', os.sep, 'quant', 'spike5.0', 'realTrading', 'realTradingData'
+                )
+        self._set_trading_bars_dir(trading_bars_dir)
 
-    def replace_spike3_trading_bars(self):
-        pass
+        if self._compare_local_to_jq():
+            self._backup_trading_bars()
+            self._jq_bars_for_spike5.to_csv(
+                    os.path.join(
+                        trading_bars_dir, 
+                        self._stock, 
+                        self._stock+'_trading_bars.csv'
+                        )
+                    )
 
 
 # -----------------------------------------------------------------------------
