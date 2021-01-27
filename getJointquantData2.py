@@ -193,6 +193,8 @@ class JointquantDataReplacement(object):
         self._stock = stock
         self.email = Email()
 
+        self._has_jq_origin_data_updated = False
+
         self._jointquant_data_dir = None
         self._jointquatn_data_path = None
         self._set_jointquant_data_dir()
@@ -248,26 +250,30 @@ class JointquantDataReplacement(object):
                 index_col='datetime'
             )
 
-            try:
-                last_update_datetime = previous_jointquant_data.iloc[-1].name
-            except:
-                last_update_datetime = previous_jointquant_data.index.to_list()[-1]
+            if previous_jointquant_data.index.to_list()[-1] < datetime.combine(datetime.now().date(), time(12)):
+                try:
+                    last_update_datetime = previous_jointquant_data.iloc[-1].name
+                except:
+                    last_update_datetime = previous_jointquant_data.index.to_list()[-1]
 
-            latest_jointquant_data = self.get_stock_data_from_jointquant(
-                self._stock,
-                (last_update_datetime - timedelta(days=10)).strftime("%Y-%m-%d")
-            )
+                latest_jointquant_data = self.get_stock_data_from_jointquant(
+                    self._stock,
+                    (last_update_datetime - timedelta(days=10)).strftime("%Y-%m-%d")
+                )
+                self._has_jq_origin_data_updated = True
 
-            try:
-                joint_datetime = latest_jointquant_data.iloc[1].name
-            except:
-                joint_datetime = latest_jointquant_data.index.to_list()[0]
-            joint_datetime -= timedelta(minutes=15)
+                try:
+                    joint_datetime = latest_jointquant_data.iloc[1].name
+                except:
+                    joint_datetime = latest_jointquant_data.index.to_list()[0]
+                joint_datetime -= timedelta(minutes=15)
 
-            self._jointquant_data_origin = pd.concat([
-                previous_jointquant_data.loc[:joint_datetime.strftime('%Y-%m-%d %H:%M:%S'), :],
-                latest_jointquant_data.loc[:, :]
-            ])
+                self._jointquant_data_origin = pd.concat([
+                    previous_jointquant_data.loc[:joint_datetime.strftime('%Y-%m-%d %H:%M:%S'), :],
+                    latest_jointquant_data.loc[:, :]
+                ])
+            else:
+                self._jointquant_data_origin = previous_jointquant_data
         else:
             self._jointquant_data_origin = self.get_stock_data_from_jointquant(
                 self._stock,
@@ -277,14 +283,15 @@ class JointquantDataReplacement(object):
 
         if datetime.now().time() > time(15):
             end_time = datetime.combine(datetime.now().date(), time(16)).strftime('%Y-%m-%d %H:%M:%S')
-        elif datetime.now().time() > time(12):
+        elif datetime.now().time() > time(11, 30):
             end_time = datetime.combine(datetime.now().date(), time(12)).strftime('%Y-%m-%d %H:%M:%S')
         else:
             end_time = datetime.combine(datetime.now().date(), time(9)).strftime('%Y-%m-%d %H:%M:%S')
 
         self._jointquant_data_origin = self._jointquant_data_origin.loc[:end_time, :]
 
-        self._jointquant_data_origin.to_csv(self._jointquatn_data_path)
+        if self._has_jq_origin_data_updated:
+            self._jointquant_data_origin.to_csv(self._jointquatn_data_path)
 
     # ------------------------------------------------------------------------------------------------------------------
     def _check_jointquant_data(self):
@@ -292,13 +299,13 @@ class JointquantDataReplacement(object):
         # check bars end times
         check_pass = True
 
-        print('jq origin data:')
-        print(self._jointquant_data_origin.tail(10))
+        # print('jq origin data:')
+        # print(self._jointquant_data_origin.tail(10))
 
         todaysBars = self._jointquant_data_origin.loc[datetime.today().strftime("%Y-%m-%d"):, :]
         numberOfTodaysBars = len(todaysBars)
-        print('today bars is:')
-        print(todaysBars)
+        # print('today bars is:')
+        # print(todaysBars)
         listOftodaysBarsDatetime = todaysBars.index.to_list()
 
         if time(11, 30) < datetime.now().time() < time(13):
@@ -374,7 +381,8 @@ class JointquantDataReplacement(object):
         compare_pass = True
 
         df_local = self._trading_bars.loc[self._todayStr:, :].copy()
-        df_jq = self._jq_bars_for_spike6.loc[self._todayStr:, :].copy()
+        # df_jq = self._jq_bars_for_spike6.loc[self._todayStr:, :].copy()
+        df_jq = self._jq_bars_for_all_spike.loc[self._todayStr:, :].copy()
 
         df_jq.rename(columns={'open': 'open_jq', 'high': 'high_jq', 'low': 'low_jq', 'close': 'close_jq'}, inplace=True)
         df_local.rename(columns={'open': 'open_lo', 'high': 'high_lo', 'low': 'low_lo', 'close': 'close_lo'},
@@ -609,6 +617,22 @@ class JointquantDataReplacement(object):
                         self._stock+'_trading_bars.csv'
                         )
                     )
+
+
+# -----------------------------------------------------------------------------
+def replace_spike5_trading_bars(stock_list):
+    for stock in stock_list:
+        jqr = JointquantDataReplacement(stock)
+        jqr.replace_spike5_trading_bars()
+    print('Replace spike5 trading bars succeeded.')
+
+
+# -----------------------------------------------------------------------------
+def replace_spike6_trading_bars(stock_list):
+    for stock in stock_list:
+        jqr = JointquantDataReplacement(stock)
+        jqr.replace_spike6_trading_bars()
+    print('Replace spike6 trading bars succeeded.')
 
 
 # -----------------------------------------------------------------------------
