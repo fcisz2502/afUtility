@@ -15,7 +15,8 @@ def check_log(log_dirs_list=None):
             ]
 
     excluding_errors= [
-        "get spike3 orders pnl failed: IndexError('list index out of range',)"
+        "get spike3 orders pnl failed: IndexError('list index out of range',)",
+        "get history_orders_pnl_from_vm2 failed: IndexError('list index out of range',)"
     ]
 
     email = Email()
