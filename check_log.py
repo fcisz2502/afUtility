@@ -1,29 +1,60 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
-from datetime import date
-from mailing import Email
+import os
+from datetime import datetime, time
+from afUtility.mailing import Email
+from dateutil import parser
 
-def check_log(path, instruments):
+
+# ------------------------------------------------------------------------------
+def check_log(log_dirs_list=None):
+    if log_dirs_list is None:
+        log_dirs_list = [
+            os.path.join('c', os.sep, 'quant', 'spike5.0', 'realTrading', 'realTradingData'),
+            os.path.join('c', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData')
+            ]
+    
     email = Email()
-    for instrument in instruments:
-        data = pd.read_table(path + instrument +'\\' + instrument + '_trading.log', header=None)
-        data.columns = ['info']
-        data['datetime'] = data['info'].apply(lambda x: x.split(' - ')[0])
-        data['message'] = data['info'].apply(lambda x: x.split(' - ')[3])
-        data['datetime'] = pd.to_datetime(data['datetime'])
-        data = data[data['datetime'] >= date.today()]
-        data.reset_index(drop=True, inplace=True)
-        data = data[['datetime', 'message']]
-        error_data = pd.DataFrame(columns = ['datetime', 'error'])
-        for i  in range(len(data)):
-            if ('failed' in data.loc[i, 'message']) or ('error' in data.loc[i, 'message']):
-                error_data.loc[error_data.shape[0]] = data.loc[i].values
-        if len(error_data) > 0:
-            email.send("log Error!", error_data.to_html(index=0, justify='left'))
+
+    stocks_with_error = set()
+    
+    for log_dir in log_dirs_list:
+        for root, dirs, files in os.walk(log_dir):
+            # print(files)
+            for file in files:
+                if file[-3:] == 'log':
+                    
+                    data = pd.read_table(
+                        os.path.join(root, file), 
+                        encoding='unicode_escape',
+                        header=None
+                        )
+                    data.columns = ['info']
+                    
+                    dt_list = []
+                    for dt in [txt[:19] for txt in data.loc[:, 'info']]:
+                        try:
+                            dt_list.append(parser.parse(dt))
+                        except Exception as e:
+                            email.send(file[:6]+' ' +dt, repr(e))
+                            dt_list.append(datetime.now())
+                            
+                    data.loc[:, 'datetime'] = dt_list
+                    
+                    if datetime.now().time() > time(15):
+                        begin_datetime = datetime.combine(datetime.now().date(), time(12))
+                    else:  # datetime.now().time() > time(11, 30):
+                        begin_datetime = datetime.combine(datetime.now().date(), time(0))
+                    
+                    data = data[data['datetime'] >= begin_datetime]
+                    data.reset_index(drop=True, inplace=True)
+                    data = data.loc[:, ['datetime', 'info']]
+                    for index, row in data.iterrows():
+                        if 'error' in row['info'] or 'fail' in row['info']:
+                            stocks_with_error.add(file[:6])
+    if stocks_with_error:
+        email.send('Error or failed infomation in %s trading.log.' % stocks_with_error, '')
 
 
-if __name__ == "__main__":
-    path =  'C:\\quant\\spike5.0\\realtrading\\realTradingData\\'
-    instruments = ['002008', '000333', '600276', '000661', '000858',
-                   "601318", "600009", "603288", "600309"]
-    check_log(path,instruments)
+if __name__ == '__main__':
+    check_log()
