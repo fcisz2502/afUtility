@@ -13,7 +13,11 @@ def check_log(log_dirs_list=None):
             os.path.join('c', os.sep, 'quant', 'spike5.0', 'realTrading', 'realTradingData'),
             os.path.join('c', os.sep, 'quant', 'spike6.0', 'realTrading', 'realTradingData')
             ]
-    
+
+    excluding_errors= [
+        "get spike3 orders pnl failed: IndexError('list index out of range',)"
+    ]
+
     email = Email()
 
     stocks_with_error = set()
@@ -50,11 +54,19 @@ def check_log(log_dirs_list=None):
                     data.reset_index(drop=True, inplace=True)
                     data = data.loc[:, ['datetime', 'info']]
                     for index, row in data.iterrows():
-                        if 'error' in row['info'] or 'fail' in row['info']:
-                            stocks_with_error.add(file[:6])
+                        if 'error' in str.lower(row['info']) or 'fail' in str.lower(row['info']):
+                            excluded = False
+                            for error in excluding_errors:
+                                if error in row['info']:
+                                    excluded = True
+                            if not excluded:
+                                stocks_with_error.add(file[:6])
     if stocks_with_error:
         email.send('Error or failed infomation in %s trading.log.' % stocks_with_error, '')
 
+    print('Check log is done!')
 
+
+# ----------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     check_log()
