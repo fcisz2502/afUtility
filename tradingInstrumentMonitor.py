@@ -16,9 +16,9 @@ class TradingInstrumentMonitor(object):
         for root, dirs, files in os.walk(saving_dir):
             for file in files:
                 f = open(os.path.join(root, file), 'r+')
-                future = f.read()
+                instrument = f.read()
                 if future:
-                    trading_instrument_set.add(f.read())
+                    trading_instrument_set.add(instrument)
                 f.seek(0)
                 f.truncate()
                 f.close()
