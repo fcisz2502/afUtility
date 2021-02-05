@@ -1,7 +1,6 @@
 import os
 from afUtility.mailing import Email
 from keyInfo import cwhEmail
-from copy import deepcopy
 
 
 # -----------------------------------------------------------------------------
@@ -10,54 +9,55 @@ class TradingInstrumentMonitor(object):
         self.email = Email()
     
     # -------------------------------------------------------------------------    
-    def getTradingInstrumentList(self, saving_dir):
-        trading_future_set = set()
+    def _get_trading_instrument_set(self, saving_dir):
+        # used in future and stock trading,
+        # # so use instrument instead of futures or stocks
+        trading_instrument_set = set()
         for root, dirs, files in os.walk(saving_dir):
             for file in files:
                 f = open(os.path.join(root, file), 'r+')
                 future = f.read()
                 if future:
-                    trading_future_set.add(f.read())
+                    trading_instrument_set.add(f.read())
                 f.seek(0)
                 f.truncate()
                 f.close()
-        return trading_future_set
+        return trading_instrument_set
     
     # ------------------------------------------------------------------------- 
-    def compareGivenInstrumentToTradingInstrument(self, givenInstrumentList, tradingInstrumentList):
-        print('tradingInstrumentList is: ', tradingInstrumentList)
-        print('givenInstrumentList is: ', givenInstrumentList)
-        gim = deepcopy(givenInstrumentList)
-        if len(tradingInstrumentList) > 0:
+    def _compare_given_instrument_to_trading_instrument(self, given_instrument_list, trading_instrument_set):
+        print('trading_instrument_set is: ', trading_instrument_set)
+        print('given_instrument_list is: ', given_instrument_list)
+        gim = given_instrument_list[:]
+        if trading_instrument_set:
             try:
-                for item in tradingInstrumentList:
+                for item in trading_instrument_set:
                     if item != str():
                         gim.remove(item)
-            except ValueError, e:
-                self.email.send('ValueError in tradingInstrumentList, check it!', repr(e))
-                print('ValueError in tradingInstrumentList: ', e)
+            except ValueError:
+                self.email.send('ValueError in trading_instrument_list, check it!', repr(e))
 
         return gim
     
     # -------------------------------------------------------------------------     
-    def checkTradingBeginning(self, emailSubjectPrefix, assetPath, givenInstrumentList):
-        til = self.getTradingInstrumentList(assetPath)  # til = tradingInstrumentList
-        compareRes = self.compareGivenInstrumentToTradingInstrument(givenInstrumentList, til)
-        self.email.set_subjectPrefix(emailSubjectPrefix)
+    def check_trading_beginning(self, email_subject_prefix, instrument_saving_dir, given_instrument_list):
+        tis = self._get_trading_instrument_set(instrument_saving_dir)  # til = tradingInstrumentList
+        compare_res = self._compare_given_instrument_to_trading_instrument(given_instrument_list, tis)
+        self.email.set_subjectPrefix(email_subject_prefix)
         
-        if len(compareRes) > 0:
-            self.email.send(str(compareRes) + ' has not started for trading', str())
+        if compare_res:
+            self.email.send(str(compare_res) + ' has not started for trading', str())
         else:
             self.email.send('trading has started.', str())
             
     # ------------------------------------------------------------------------- 
-    def checkTradingEnding(self, emailSubjectPrefix, assetPath, givenInstrumentList):    
-        til = self. getTradingInstrumentList(assetPath)
-        compareRes = self.compareGivenInstrumentToTradingInstrument(givenInstrumentList, til)
-        self.email.set_subjectPrefix(emailSubjectPrefix)
+    def check_trading_ending(self, email_subject_prefix, instrument_saving_dir, given_instrument_list):
+        tis = self._get_trading_instrument_set(instrument_saving_dir)
+        compare_res = self._compare_given_instrument_to_trading_instrument(given_instrument_list, tis)
+        self.email.set_subjectPrefix(email_subject_prefix)
         
-        if len(compareRes) > 0:
-            self.email.send(str(compareRes) + ' has not ended normally', str())
+        if compare_res:
+            self.email.send(str(compare_res) + ' has not ended normally', str())
         else:
             self.email.send('trading has ended.', str())
             
