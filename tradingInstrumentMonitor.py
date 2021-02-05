@@ -36,41 +36,34 @@ class TradingInstrumentMonitor(object):
                 try:
                     gil.remove(instrument)
                 except ValueError:
-                    self._email.send(
-                        'ValueError in trading_instrument_list, check it!', repr(e)
-                        )
+                    self._email.send('ValueError in trading_instrument_list, check it!', repr(e))
         return gil
     
     # -------------------------------------------------------------------------
     def _check_trading(self, instrument_saving_dir, given_instrument_list):
         tis = self._get_trading_instrument_set(instrument_saving_dir)
         res = self._compare_2_src(given_instrument_list, tis)
-        
         return res
 
     # -------------------------------------------------------------------------     
     def check_trading_beginning(self, email_subject_prefix, instrument_saving_dir, given_instrument_list):
-        compare_res = self._check_trading(
-            instrument_saving_dir, given_instrument_list
-            )
-        
+        compare_res = self._check_trading(instrument_saving_dir, given_instrument_list)
+
+        self._email.set_subjectPrefix(email_subject_prefix)
         if compare_res:
-            self._email.set_subjectPrefix(email_subject_prefix)
-            self._email.send(str(compare_res) + ' has not started for trading.', '')
-        # else:
-        #     self._email.send('trading has started.', '')
+            self._email.send('%s has not started for trading.' % compare_res, '')
+        else:
+            self._email.send('trading has started.', '')
             
     # ------------------------------------------------------------------------- 
     def check_trading_ending(self, email_subject_prefix, instrument_saving_dir, given_instrument_list):
-        compare_res = self._check_trading(
-            instrument_saving_dir, given_instrument_list
-            )
-        
+        compare_res = self._check_trading(instrument_saving_dir, given_instrument_list)
+
+        self._email.set_subjectPrefix(email_subject_prefix)
         if compare_res:
-            self._email.set_subjectPrefix(email_subject_prefix)
-            self._email.send(str(compare_res) + ' has not ended normally.', '')
-        # else:
-            # self._email.send('trading has ended.', '')
+            self._email.send('%s has not ended normally.' % compare_res, '')
+        else:
+            self._email.send('trading has ended.', '')
             
             
 # -----------------------------------------------------------------------------
