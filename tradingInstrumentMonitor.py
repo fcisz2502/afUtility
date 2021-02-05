@@ -10,15 +10,18 @@ class TradingInstrumentMonitor(object):
         self.email = Email()
     
     # -------------------------------------------------------------------------    
-    def getTradingInstrumentList(self, assetPath):
-        tradingInstrumentList = list()
-        for doc in os.listdir(assetPath):
-            f = open(os.path.join(assetPath, doc), 'r+')
-            tradingInstrumentList.append(f.read())
-            f.seek(0)
-            f.truncate()
-            f.close()
-        return tradingInstrumentList
+    def getTradingInstrumentList(self, saving_dir):
+        trading_future_set = set()
+        for root, dirs, files in os.walk(saving_dir):
+            for file in files:
+                f = open(os.path.join(root, file), 'r+')
+                future = f.read()
+                if future:
+                    trading_future_set.add(f.read())
+                f.seek(0)
+                f.truncate()
+                f.close()
+        return trading_future_set
     
     # ------------------------------------------------------------------------- 
     def compareGivenInstrumentToTradingInstrument(self, givenInstrumentList, tradingInstrumentList):
