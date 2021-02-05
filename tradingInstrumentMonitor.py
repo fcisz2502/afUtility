@@ -6,12 +6,12 @@ from keyInfo import cwhEmail
 # -----------------------------------------------------------------------------
 class TradingInstrumentMonitor(object):
     def __init__(self):
-        self.email = Email()
+        self._email = Email()
     
     # -------------------------------------------------------------------------    
     def _get_trading_instrument_set(self, saving_dir):
-        # used in future and stock trading,
-        # # so use instrument instead of futures or stocks
+        # method used in future and stock trading,
+        # so use instrument instead of futures or stocks
         trading_instrument_set = set()
         for root, dirs, files in os.walk(saving_dir):
             for file in files:
@@ -25,41 +25,52 @@ class TradingInstrumentMonitor(object):
         return trading_instrument_set
     
     # ------------------------------------------------------------------------- 
-    def _compare_given_instrument_to_trading_instrument(self, given_instrument_list, trading_instrument_set):
+    def _compare_2_src(self, given_instrument_list, trading_instrument_set):
         print('trading_instrument_set is: ', trading_instrument_set)
         print('given_instrument_list is: ', given_instrument_list)
-        gim = given_instrument_list[:]
-        if trading_instrument_set:
-            try:
-                for item in trading_instrument_set:
-                    if item != str():
-                        gim.remove(item)
-            except ValueError:
-                self.email.send('ValueError in trading_instrument_list, check it!', repr(e))
+        
+        gil = given_instrument_list[:]
 
-        return gim
+        for instrument in trading_instrument_set:
+            if len(instrument) and not instrument.isspace():
+                try:
+                    gil.remove(instrument)
+                except ValueError:
+                    self._email.send(
+                        'ValueError in trading_instrument_list, check it!', repr(e)
+                        )
+        return gil
     
+    # -------------------------------------------------------------------------
+    def _check_trading(self, instrument_saving_dir, given_instrument_list):
+        tis = self._get_trading_instrument_set(instrument_saving_dir)
+        res = self._compare_2_src(given_instrument_list, tis)
+        
+        return res
+
     # -------------------------------------------------------------------------     
     def check_trading_beginning(self, email_subject_prefix, instrument_saving_dir, given_instrument_list):
-        tis = self._get_trading_instrument_set(instrument_saving_dir)  # til = tradingInstrumentList
-        compare_res = self._compare_given_instrument_to_trading_instrument(given_instrument_list, tis)
-        self.email.set_subjectPrefix(email_subject_prefix)
+        compare_res = self._check_trading(
+            instrument_saving_dir, given_instrument_list
+            )
         
         if compare_res:
-            self.email.send(str(compare_res) + ' has not started for trading', str())
-        else:
-            self.email.send('trading has started.', str())
+            self._email.set_subjectPrefix(email_subject_prefix)
+            self._email.send(str(compare_res) + ' has not started for trading.', '')
+        # else:
+        #     self._email.send('trading has started.', '')
             
     # ------------------------------------------------------------------------- 
     def check_trading_ending(self, email_subject_prefix, instrument_saving_dir, given_instrument_list):
-        tis = self._get_trading_instrument_set(instrument_saving_dir)
-        compare_res = self._compare_given_instrument_to_trading_instrument(given_instrument_list, tis)
-        self.email.set_subjectPrefix(email_subject_prefix)
+        compare_res = self._check_trading(
+            instrument_saving_dir, given_instrument_list
+            )
         
         if compare_res:
-            self.email.send(str(compare_res) + ' has not ended normally', str())
-        else:
-            self.email.send('trading has ended.', str())
+            self._email.set_subjectPrefix(email_subject_prefix)
+            self._email.send(str(compare_res) + ' has not ended normally.', '')
+        # else:
+            # self._email.send('trading has ended.', '')
             
             
 # -----------------------------------------------------------------------------
