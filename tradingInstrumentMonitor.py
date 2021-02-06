@@ -17,7 +17,7 @@ class TradingInstrumentMonitor(object):
             for file in files:
                 f = open(os.path.join(root, file), 'r+')
                 instrument = f.read()
-                if future:
+                if instrument:
                     trading_instrument_set.add(instrument)
                 f.seek(0)
                 f.truncate()
