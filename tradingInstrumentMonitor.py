@@ -15,13 +15,14 @@ class TradingInstrumentMonitor(object):
         trading_instrument_set = set()
         for root, dirs, files in os.walk(saving_dir):
             for file in files:
-                f = open(os.path.join(root, file), 'r+')
-                instrument = f.read()
-                if instrument:
-                    trading_instrument_set.add(instrument)
-                f.seek(0)
-                f.truncate()
-                f.close()
+                if 10 == len(file) and 'txt' == file[-3:]:
+                    f = open(os.path.join(root, file), 'r+')
+                    instrument = f.read()
+                    if instrument:
+                        trading_instrument_set.add(instrument)
+                    f.seek(0)
+                    f.truncate()
+                    f.close()
         return trading_instrument_set
     
     # ------------------------------------------------------------------------- 
