@@ -507,12 +507,15 @@ class JointquantDataReplacement(object):
         previous_bars_path = os.path.join(
             self._trading_bars_dir, self._stock, self._stock+'_trading_bars_backup.csv')
         if os.path.exists(previous_bars_path):
-            previous_bars = pd.read_csv(previous_bars_path, parse_dates=['datetime'], index_col='datetime')
-            last_backup_dt = previous_bars.index.to_list()[-1]
+            try:
+                previous_bars = pd.read_csv(previous_bars_path, parse_dates=['datetime'], index_col='datetime')
+                last_backup_dt = previous_bars.index.to_list()[-1]
 
-            dt = (last_backup_dt + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
-            full = pd.concat([previous_bars, self._trading_bars.loc[dt:, :]])
-            full.drop_duplicates(keep='last', inplace=True)
+                dt = (last_backup_dt + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+                full = pd.concat([previous_bars, self._trading_bars.loc[dt:, :]])
+                full.drop_duplicates(keep='last', inplace=True)
+            except pd.errors.EmptyDataError:
+                full = self._trading_bars
         else:
             full = self._trading_bars
 
