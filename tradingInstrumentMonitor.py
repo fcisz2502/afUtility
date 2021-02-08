@@ -15,7 +15,8 @@ class TradingInstrumentMonitor(object):
         trading_instrument_set = set()
         for root, dirs, files in os.walk(saving_dir):
             for file in files:
-                if 10 == len(file) and 'txt' == file[-3:]:
+                # file: 603288.txt or bu2106.txt, or m2105.txt
+                if len(file) <= 10 and 'txt' == file[-3:]:
                     f = open(os.path.join(root, file), 'r+')
                     instrument = f.read()
                     if instrument:
