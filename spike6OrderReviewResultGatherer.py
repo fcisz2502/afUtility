@@ -3,7 +3,7 @@ from datetime import datetime, time
 import pandas as pd
 from afUtility.mailing import Email
 from afUtility.keyInfo import zmEmail, cwhEmail
-from afUtility.keyInfo import keyInfo
+from afUtility.keyInfo import machineID
 
 
 # -----------------------------------------------------------------------------
@@ -16,7 +16,7 @@ def getAllOrderReview():
     # email.set_subjectPrefix('')
 #    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", "spike stocks", "orderReview")
-    checkList = [keyInfo+"_spike61"]
+    checkList = [machineID+"_spike61"]
     today = str(datetime.today().date())
     
     orderReviewTotalResult = pd.DataFrame()
