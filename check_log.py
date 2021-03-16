@@ -18,7 +18,8 @@ def check_log(log_dirs_list=None):
         "get spike3 orders pnl failed: IndexError('list index out of range',)",
         "Getting spike3 orders pnl failed: IndexError('list index out of range',)",
         "get history_orders_pnl_from_vm2 failed: IndexError('list index out of range',)",
-        "Getting last tick from iquant has failed"
+        "Getting last tick from iquant has failed",
+        "TypeError('eval() arg 1 must be a string, bytes or code object',)."
     ]
 
     email = Email()
