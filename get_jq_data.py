@@ -373,7 +373,7 @@ class JointquantDataReplacement(object):
         self._jq_bars_for_all_spike.set_index('datetime', drop=True, inplace=True)
 
     # ------------------------------------------------------------------------------------------------------------------
-    def _save_jq_bars_for_spike5(self):
+    def save_jq_bars_for_spike5(self):
         save = True
         if self._update_and_check_jointquant_data():
             self._produce_jq_bars_for_all_spike()
@@ -523,7 +523,7 @@ class JointquantDataReplacement(object):
         # if 'spike6' in self._trading_bars_dir:
         #     self.save_jq_bars_for_spike6()
         # elif 'spike5' in self._trading_bars_dir:
-        #     self._save_jq_bars_for_spike5()
+        #     self.save_jq_bars_for_spike5()
         # else:
         #     raise Exception('dir does not include spike6 nor spike5.')
         # # spike6_trading_bars_dir = os.path.join(
@@ -635,13 +635,9 @@ if __name__ == "__main__":
     # folder_path = os.path.join('c:', os.sep, 'jqData',  'jqData')
     # get_jq_stock_data_for_backtesting(stocks, fre='1m') # '1d', '1w''
 
-
     # -------------------------------------------------------------------------
     '''get future data'''
     # future_data_path = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud",
     #                            "dataProcess", "future_daily_data")
     # futures= ['rb2105']
     # updateFutureDataWithJointquant(futures, future_data_path)
-
-
-
