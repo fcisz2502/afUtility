@@ -3,6 +3,7 @@ from datetime import datetime, time
 import pandas as pd
 from afUtility.mailing import Email
 from afUtility.keyInfo import zmEmail, cwhEmail
+from afUtility.keyInfo import machineID
 
 
 # -----------------------------------------------------------------------------
@@ -12,10 +13,10 @@ def getAllOrderReview():
     compare today's orders in real trading with thoes in backtesting. 
     '''
     email = Email()
-    email.set_subjectPrefix(str())
+    # email.set_subjectPrefix('')
 #    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
     reviewResultFolder = os.path.join(os.sep*2, "FCIDEBIAN", "FCI_Cloud", "dataProcess", "spike stocks", "orderReview")
-    checkList = [ "VM5QS_spike2", "VM5QS_spikeOLOS", "VM4YYC_spikeOLOS"]
+    checkList = [machineID+"_spike61"]
     today = str(datetime.today().date())
     
     orderReviewTotalResult = pd.DataFrame()
@@ -33,50 +34,38 @@ def getAllOrderReview():
     fileSaveAndAttached = os.path.join(reviewResultFolder, datetime.now().strftime("%Y-%m-%d_%H%M%S")+"_allSpikeOrderReview.csv")
     orderReviewTotalResult.to_csv(fileSaveAndAttached, index=0)
     
-#    email = Email()
-#    email.receivers.append(zmEmail)
-#    email.send("spike order review: "+subjectSuffix,
-#               str(),
-#               files = [fileSaveAndAttached])
-    
-    # get orderReviewTotalResult from loacl machine
-#    reviewResultFolder = "\\\\FCIDEBIAN\\FCI_Cloud\\dataProcess\\spike stocks\\orderReview"
-#    doc = "2020-03-23_170616_allSpikeOrderReview.csv"
-#    doc = os.path.join(reviewResultFolder, doc)
-#    orderReviewTotalResult = pd.read_csv(doc)
-    
-    orderReviewTotalResult['rt_openDatetime'] = pd.to_datetime(orderReviewTotalResult['rt_openDatetime'])
-    orderReviewTotalResult['rt_closeDatetime'] = pd.to_datetime(orderReviewTotalResult['rt_closeDatetime'])
-    orderReviewTotalResult['bt_openDatetime'] = pd.to_datetime(orderReviewTotalResult['bt_openDatetime'])
-    orderReviewTotalResult['bt_closeDatetime'] = pd.to_datetime(orderReviewTotalResult['bt_closeDatetime'])
+    orderReviewTotalResult['rt_open_datetime'] = pd.to_datetime(orderReviewTotalResult['rt_open_datetime'])
+    orderReviewTotalResult['rt_close_datetime'] = pd.to_datetime(orderReviewTotalResult['rt_close_datetime'])
+    orderReviewTotalResult['bt_open_datetime'] = pd.to_datetime(orderReviewTotalResult['bt_open_datetime'])
+    orderReviewTotalResult['bt_close_datetime'] = pd.to_datetime(orderReviewTotalResult['bt_close_datetime'])
     
     # get today's orders in both real trading and backtesting
     tradeBeginTime = datetime.combine(datetime.now().date(),time(9))
     tradeEndTime = datetime.combine(datetime.now().date(),time(15))
     
-    orderReviewTotalResult['rt_openDatetime'].fillna(datetime(2019,1,1), inplace=True)
-    orderReviewTotalResult['rt_closeDatetime'].fillna(datetime(2019,1,1), inplace=True)
-    orderReviewTotalResult['bt_openDatetime'].fillna(datetime(2019,1,1), inplace=True)
-    orderReviewTotalResult['bt_closeDatetime'].fillna(datetime(2019,1,1), inplace=True)
+    orderReviewTotalResult['rt_open_datetime'].fillna(datetime(2019,1,1), inplace=True)
+    orderReviewTotalResult['rt_close_datetime'].fillna(datetime(2019,1,1), inplace=True)
+    orderReviewTotalResult['bt_open_datetime'].fillna(datetime(2019,1,1), inplace=True)
+    orderReviewTotalResult['bt_close_datetime'].fillna(datetime(2019,1,1), inplace=True)
     
-    todaysOrder = orderReviewTotalResult.loc[(orderReviewTotalResult['rt_openDatetime']>tradeBeginTime) | (
-                                            (tradeBeginTime < orderReviewTotalResult['rt_closeDatetime']) & (
-                                                    orderReviewTotalResult['rt_closeDatetime'] < tradeEndTime)) | (
-                                            orderReviewTotalResult['bt_openDatetime']>tradeBeginTime) | (
-                                            (tradeBeginTime < orderReviewTotalResult['bt_closeDatetime']) & (
-                                                    orderReviewTotalResult['bt_closeDatetime'] < tradeEndTime))]
-    
-    volumeCheck = todaysOrder.loc[: ,['strategyID', 'diff_volume']]
-    volumeCheck.fillna(1, inplace=True)
-    volumeCheck['diff_volume_bool'] = volumeCheck.loc[:, 'diff_volume'].map(lambda x: 0!=int(x))
-    if volumeCheck.loc[:, 'diff_volume_bool'].sum():
-        volumeCheck.set_index("strategyID", drop=True, inplace=True)
+    todaysOrder = orderReviewTotalResult.loc[(orderReviewTotalResult['rt_open_datetime']>tradeBeginTime) | (
+                                            (tradeBeginTime < orderReviewTotalResult['rt_close_datetime']) & (
+                                                    orderReviewTotalResult['rt_close_datetime'] < tradeEndTime)) | (
+                                            orderReviewTotalResult['bt_open_datetime']>tradeBeginTime) | (
+                                            (tradeBeginTime < orderReviewTotalResult['bt_close_datetime']) & (
+                                                    orderReviewTotalResult['bt_close_datetime'] < tradeEndTime))]
+
+    lot_check = todaysOrder.loc[: ,['strategyID', 'diff_lot']]
+    lot_check.fillna(1, inplace=True)
+    lot_check['diff_lot_bool'] = lot_check.loc[:, 'diff_lot'].map(lambda x: 0!=int(x))
+    if lot_check.loc[:, 'diff_lot_bool'].sum():
+        lot_check.set_index("strategyID", drop=True, inplace=True)
 #        email.receivers = cwhEmail
-        email.send('spike order review volume difference.', volumeCheck.to_html(justify='left'))
+        email.send('spike order review volume difference.', lot_check.to_html(justify='left'))
     
     # rearange today's order(s) before sending them 
-    pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'openDatetime', 'closeDatetime', 
-                                       'openPrice', 'closePrice', 'volume', 'direction'])
+    pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'open_datetime', 'close_datetime', 
+                                       'open_price', 'close_price', 'lot', 'direction'])
     todayOrderPresented = pd.DataFrame(columns=['column', 'realTrading', 'backtesting'])
     for row in todaysOrder.iterrows():
         pairComp.loc[len(pairComp), :] = [row[1]['strategyID']] + list(row[1]['rt_index':'rt_direction'])
@@ -88,8 +77,8 @@ def getAllOrderReview():
         todayOrderPresented.reset_index(drop=True, inplace=True)
         tempDF = None
         todayOrderPresented.loc[todayOrderPresented.shape[0], 'column': "backtesting"]= [str(), str(), str()]
-        pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'openDatetime', 'closeDatetime', 
-                                           'openPrice', 'closePrice', 'volume', 'direction'])
+        pairComp = pd.DataFrame(columns = ['stock', 'orderNumber', 'open_datetime', 'close_datetime', 
+                                           'open_price', 'close_price', 'lot', 'direction'])
 
     todayOrderPresented.set_index('column', inplace=True, drop=True)
     
@@ -99,7 +88,8 @@ def getAllOrderReview():
     todayOrderPresented.fillna(str(),inplace=True)
     
     email.receivers.append(zmEmail)
-    email.send("Review spike's order(s) today: " + subjectSuffix, 
+    # email.receivers = [cwhEmail]
+    email.send("Review spike6's order(s) today: " + subjectSuffix,
                todayOrderPresented.to_html(justify='left'),
                files = [fileSaveAndAttached])
     
