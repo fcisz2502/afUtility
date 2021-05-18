@@ -83,9 +83,7 @@ class Email(object):
                 # go to next line, use“\r\n” if is string, or "<br>" if html
                 msgAlter.attach(
                     MIMEText(
-                        "<br>"
-                        "<br>"
-                        "cc Error: please input cc email addr in list, such as: ['xxx@xxx']",
+                        "<br><br>cc Error: please input cc email addr in list, such as: ['xxx@xxx']",
                         'html',
                         'utf-8'
                     )
