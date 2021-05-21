@@ -11,6 +11,7 @@ from afUtility.keyInfo import (
     zmEmail,
     senderEmail,
     senderEmailPassword,
+    mail_host,
     machineID
 )
 
@@ -32,7 +33,7 @@ class Email(object):
     # -------------------------------------------------------------------------
     def send(self, subject, content, png=None, files=None, cc=[]):
         # 第三方 SMTP 服务
-        mail_host = "smtp.exmail.qq.com"  # 设置服务器
+        _mail_host = mail_host  # 设置服务器
         mail_user = senderEmail  # 用户名
         mail_pass = senderEmailPassword  # 口令
 
@@ -73,7 +74,7 @@ class Email(object):
 
         try:
             smtpObj = smtplib.SMTP()
-            smtpObj.connect(mail_host, 25)  # 25 为 SMTP 端口号
+            smtpObj.connect(_mail_host, 25)  # 25 为 SMTP 端口号
             smtpObj.login(mail_user, mail_pass)
 
             if isinstance(cc, list):
@@ -98,8 +99,7 @@ class Email(object):
 
 if __name__ == '__main__':
     email = Email()
-    # email.set_subjectPrefix('testing')
-    # email.receivers = [cwhEmail]
-    # email.send('testing', str(), files=["C:\\py\\qsyh_AP001.csv"])
+    email.set_subjectPrefix('testing')
+    email.send('testing', "C:\\py\\qsyh_AP.csv")
     # order = {'order1': {'openPrice': 10, 'closePrice': 1, 'pnl': 9}}
     # email.send('Horward', str(order))
