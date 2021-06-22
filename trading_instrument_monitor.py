@@ -74,6 +74,8 @@ class TradingInstrumentMonitor(object):
             self._email.send('%s has not started for trading.' % compare_res, '')
         else:
             self._email.send('trading has started.', '')
+
+        return True
             
     # ------------------------------------------------------------------------- 
     def check_trading_ending(self, instrument_saving_dir, given_instrument_list):
@@ -85,6 +87,8 @@ class TradingInstrumentMonitor(object):
             self._email.send('%s has not ended normally.' % compare_res, '')
         else:
             self._email.send('trading has ended.', '')
+
+        return True
 
     # -------------------------------------------------------------------------
     def check_tick_datetime(self, instruments):
