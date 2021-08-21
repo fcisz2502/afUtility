@@ -1,9 +1,33 @@
 import os
 import redis
+import http.client
 from datetime import datetime, time, timedelta
 from dateutil import parser
 from afUtility.mailing import Email
 from afUtility.keyInfo import cwhEmail
+
+
+# -----------------------------------------------------------------------------
+def get_baidu_datetime():
+    baidu_dt = None
+    try:
+        conn = http.client.HTTPConnection('www.baidu.com')
+        conn.request('get', '/')
+        r = conn.getresponse()
+
+        ts = r.getheader('date')
+
+        try:
+            baidu_dt = datetime.strptime(ts, '%a, %d %b %Y %H:%M:%S GMT')
+        except ValueError:
+            baidu_dt = datetime.strptime(ts, '%a, %d %b %Y %H:%M:%S GMT+0800 (CST)')
+
+        baidu_dt += timedelta(hours=8)
+    except:
+        # don't use Exception as e or ,e, as don't know py2.7 or py 3.7 call this function
+        baidu_dt = None
+
+    return baidu_dt
 
 
 # -----------------------------------------------------------------------------
@@ -93,21 +117,30 @@ class TradingInstrumentMonitor(object):
     # -------------------------------------------------------------------------
     def check_tick_datetime(self, instruments):
         for instrument in instruments:
-            if self._rcli.get(instrument+'TickTime') is None:
-                self._email.send(
-                    "Get None for %s while checking it's tick's datetime." \
-                    % instrument, ''
-                )
+            itt = self._rcli.get(instrument+'TickTime')
+            if itt is not None:
+                if abs(parser.parse(itt) - datetime.now()) > timedelta(minutes=2):
+                    b_dt = get_baidu_datetime()
+                    if b_dt is not None:
+                        if abs(parser.parse(itt) - b_dt) > timedelta(minutes=2):
+                            self._email.send(
+                                "%s's tick time deviates from " \
+                                    "local time > 2 mins." % instrument, 
+                                "Deviates from baidu'time > 2 mins too."
+                            )
+                    else:
+                        self._email.send(
+                            "%s's tick time deviates from " \
+                                "local time > 2 mins." % instrument, 
+                            'Get None from baidu.'
+                        )
             else:
-                if abs(
-                    parser.parse(self._rcli.get(instrument+'TickTime')) 
-                    - datetime.now()
-                ) > timedelta(minutes=2):
-                    self._email.send(
-                        "%s tick's datetime has deviated from "\
-                        "local time more than 2 minutes." % instrument, ''
-                    )
-            
+                self._email.send(
+                    "Get None for %s from redis while checking \
+                        it's tick time." % instrument, 
+                    ''
+                )
+
             
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
