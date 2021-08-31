@@ -117,7 +117,7 @@ class TradingInstrumentMonitor(object):
     # -------------------------------------------------------------------------
     def check_tick_datetime(self, instruments):
         for instrument in instruments:
-            itt = self._rcli.get(instrument+'TickTime')
+            itt = self._rcli.get('tick_time', instrument)
             if itt is not None:
                 if abs(parser.parse(itt) - datetime.now()) > timedelta(minutes=2):
                     b_dt = get_baidu_datetime()
