@@ -31,15 +31,13 @@ class Email(object):
         self.receivers = x
 
     # -------------------------------------------------------------------------
-    def send(self, subject, content, png=None, files=None, cc=[]):
+    def send(self, subject, content, png=[], files=[], cc=[]):
         # 第三方 SMTP 服务
         _mail_host = mail_host  # 设置服务器
         mail_user = senderEmail  # 用户名
         mail_pass = senderEmailPassword  # 口令
-
         sender = senderEmail
 
-        # message = MIMEText(content, 'plain', 'utf-8')
         message = MIMEMultipart('related')
         message['From'] = Header("FCI", 'utf-8')
         message['To'] = Header("fcier", 'utf-8')
@@ -49,16 +47,20 @@ class Email(object):
 
         msgAlter = MIMEMultipart('alternative')
         message.attach(msgAlter)
-        msgAlter.attach(MIMEText(content, 'html', 'utf-8'))
+
+        # add content to email
+        mail_msg = """<p>""" + content + """</p>"""
+
+        # attach id to each image
+        for j in range(len(png)):
+            mail_msg += """<p><img src="cid:image%s"></p>\n""" % j
+        msgAlter.attach(MIMEText(mail_msg, 'html', 'utf-8'))
+
+        # add images to email, images will not displayed if the nex three lines are deleted
         if png:
-            for i in range(len(png)):
-                cont_add = """
-                <p><img src="cid:image""" + str(i) + """"></P>
-                """
-                msgAlter.attach(MIMEText(cont_add, 'html', 'utf-8'))
-                fp = open(png[i], 'rb')
-                msgImage = MIMEImage(fp.read())
-                fp.close()
+            for i, p in enumerate(png):
+                with open(p, 'rb') as f:
+                    msgImage = MIMEImage(f.read())
                 msgImage.add_header('Content-ID', '<image' + str(i) + '>')
                 message.attach(msgImage)
 
@@ -97,9 +99,11 @@ class Email(object):
             print("Error: mailing failed!")
 
 
+# ----------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     email = Email()
-    email.set_subjectPrefix('testing')
-    email.send('testing', "C:\\py\\qsyh_AP.csv")
+    # email.set_subjectPrefix('testing')
+    email.send('test', 'testing', png=["c:\\cwh\\probot_margin.png"])
     # order = {'order1': {'openPrice': 10, 'closePrice': 1, 'pnl': 9}}
     # email.send('Horward', str(order))
+
